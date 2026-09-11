@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Payslip - {{ employee.FullName }}</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="payslip-container">
+        <div class="name-id">
+            <span>Employee Name</span>
+            <strong>{{ employee.FullName }}</strong>
+        </div>
+        <div class="name-id">
+            <span>Employee Code</span>
+            <strong>{{ employee.EmployeeCode }}</strong>
+        </div>
+    <div class="salary-section">
+        <div class="salary-box">
+            <div class="salary-heading earnings-heading">
+                Earnings
+            </div>
+            <div class="salary-line">
+                <span>Basic Salary</span>
+                <strong>
+                    ₹{{ "%.2f"|format(payroll.basic) }}
+                </strong>
+            </div>
+            <div class="salary-line">
+                <span>House Rent Allowance</span>
+                <strong>
+                    ₹{{ "%.2f"|format(payroll.hra) }}
+                </strong>
+            </div>
+            <div class="salary-line">
+                <span>Special Allowances</span>
+                <strong>
+                    ₹{{ "%.2f"|format(payroll.special_allowance) }}
+                </strong>
+            </div>
+            <div class="salary-line">
+                <span>Leave & Travel Allowance</span>
+                <strong>
+                    ₹{{ "%.2f"|format(payroll.lta) }}
+                </strong>
+            </div>
+            <div class="salary-line">
+                <span>Bonus</span>
+                <strong>
+                    ₹{{ "%.2f"|format(payroll.bonus) }}
+                </strong>
+            </div>
+            <div class="salary-total earnings-total">
+                <span>Gross Earnings</span>
+                <strong>
+                    ₹{{ "%.2f"|format(payroll.gross_earnings) }}
+                </strong>
+            </div>
+        </div>
+        <div class="salary-box">
+            <div class="salary-heading deductions-heading">
+                Deductions
+            </div>
+            <div class="salary-line">
+                <span>Professional Tax</span>
+                <strong>
+                    ₹{{ "%.2f"|format(payroll.professional_tax) }}
+                </strong>
+            </div>
+            <div class="salary-line">
+                <span>Employee Provident Fund</span>
+                <strong>
+                    ₹{{ "%.2f"|format(payroll.epf) }}
+                </strong>
+            </div>
+            <div class="salary-line">
+                <span>Tax Deducted at Source</span>
+                <strong>
+                    ₹{{ "%.2f"|format(payroll.tds) }}
+                </strong>
+            </div>
+            <div class="salary-line empty-line">
+                <span></span>
+                <strong></strong>
+            </div>
+            <div class="salary-line empty-line">
+                <span></span>
+                <strong></strong>
+            </div>
+            <div class="salary-total deductions-total">
+                <span>Total Deductions</span>
+                <strong>
+                    ₹{{ "%.2f"|format(payroll.total_deductions) }}
+                </strong>
+            </div>
+        </div>
+    </div>
+    <div class="net-pay">
+            <span>NET SALARY</span>
+        <strong>
+            ₹{{ "%.2f"|format(payroll.net_salary) }}
+        </strong>
+    </div>
+    <div class="payslip-actions">
+        <a href="{{ url_for('index') }}"
+           class="back-btn">
+            ← Back to Employees
+        </a>
+        <button onclick="window.print()"
+                class="print-btn">
+            Print Payslip
+        </button>
+    </div>
+</div>
+</body>
+</html>

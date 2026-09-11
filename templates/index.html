@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Payroll System</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="container">
+    <h1>PAYROLL SYSTEM</h1><div class="add-employee-section">
+    <form action="{{ url_for('add_employee_route') }} "method="POST" class="add-employee-form">
+        <input type="text"name="full_name"placeholder="Employee Name"required>
+        <input type="number"name="basic_salary"placeholder="Basic Salary"required>
+        <button type="submit"class="add-button">+ Add Employee</button>
+    </form>
+</div>
+    <div class="employee-list">
+        {% for employee in employees %}
+        <div class="employee-row">
+            <div class="employee-name">
+                {{ employee.FullName }}
+            </div>
+            <div class="employee-role">
+                {{ employee.Designation }}
+            </div>
+            <div class="employee-action">
+                <a href="{{ url_for('generate_payroll', EmployeeCode=employee.EmployeeCode) }}"
+                   class="generate-button">
+                    Generate Payroll
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+</body>
+</html>
