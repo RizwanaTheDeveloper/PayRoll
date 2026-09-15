@@ -1,7 +1,6 @@
 from flask import Flask, redirect, render_template, request, url_for, flash, abort
 from employees import get_employees, get_employee, add_employee
-from payroll import calculate_payroll
-
+from payroll import calculate_payroll, current_ist_str
 app = Flask(__name__)
 app.secret_key = "change-this-to-a-random-secret-key"  # required for flash()
 
@@ -38,8 +37,13 @@ def generate_payroll(EmployeeCode):
     if not employee:
         abort(404)
     payroll = calculate_payroll(employee)
-    return render_template("payroll.html", employee=employee, payroll=payroll)
-
+    generated_at = current_ist_str()
+    return render_template(
+        "payroll.html",
+        employee=employee,
+        payroll=payroll,
+        generated_at=generated_at,
+    )
 
 @app.route("/add-employee", methods=["POST"])
 def add_employee_route():

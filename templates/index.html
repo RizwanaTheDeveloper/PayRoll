@@ -1,67 +1,94 @@
 {% extends "base.html" %}
-{% block title %}Dashboard · PayRoll{% endblock %}
+{% block title %}PayRoll Dashboard{% endblock %}
 
 {% block content %}
   <section class="page-head">
-    <div>
-      <h1>Payroll Dashboard</h1>
-      <p class="muted">Manage your team and generate payslips in one click.</p>
+    <div class="page-eyebrow"><i class="fa-solid fa-sparkles" aria-hidden="true"></i> Payroll workspace</div>
+    <div class="page-head-row">
+      <div>
+        <h1>Payroll Dashboard</h1>
+        <p class="muted lead">Manage your team and generate payslips in one click.</p>
+      </div>
     </div>
-    <a href="#add-employee" class="btn btn-ghost">+ Add Employee</a>
   </section>
 
   <!-- Stats -->
-  <section class="stats-grid">
-    <div class="stat-card">
-      <div class="stat-icon">👥</div>
-      <div>
+  <section class="stats-grid" aria-label="Payroll summary">
+    <div class="stat-card stat-blue">
+      <div class="stat-icon"><i class="fa-solid fa-users" aria-hidden="true"></i></div>
+      <div class="stat-content">
+        <div class="stat-label">Active Employees</div>
         <div class="value">{{ employees|length }}</div>
-        <div class="label">Active Employees</div>
+        <div class="stat-caption"><i class="fa-solid fa-user-group" aria-hidden="true"></i> Current team records</div>
       </div>
     </div>
-    <div class="stat-card accent">
-      <div class="stat-icon">💰</div>
-      <div>
+
+    <div class="stat-card stat-amber">
+      <div class="stat-icon"><i class="fa-solid fa-indian-rupee-sign" aria-hidden="true"></i></div>
+      <div class="stat-content">
+        <div class="stat-label">Total Basic Payroll</div>
         <div class="value">
           {{ (employees | sum(attribute='BasicSalary')) | inr if employees else '₹0.00' }}
         </div>
-        <div class="label">Total Basic Payroll</div>
+        <div class="stat-caption"><i class="fa-solid fa-wallet" aria-hidden="true"></i> Across listed employees</div>
       </div>
     </div>
-    <div class="stat-card success">
-      <div class="stat-icon">✅</div>
-      <div>
-        <div class="value">Ready</div>
-        <div class="label">System Status</div>
+
+    <div class="stat-card stat-green">
+      <div class="stat-icon"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i></div>
+      <div class="stat-content">
+        <div class="stat-label">System Status</div>
+        <div class="value status-value"><span class="status-dot"></span>Ready</div>
+        <div class="stat-caption"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Payroll module operational</div>
       </div>
     </div>
   </section>
 
   <!-- Add employee form -->
-  <section class="card" id="add-employee">
-    <h2>Add Employee</h2>
-    <p class="muted small">Enter the new team member's details.</p>
+  <section class="card form-card" id="add-employee">
+    <div class="section-heading">
+      <div class="section-icon"><i class="fa-solid fa-user-plus" aria-hidden="true"></i></div>
+      <div>
+        <h2>Add Employee</h2>
+        <p class="muted small">Enter the new team member's details.</p>
+      </div>
+    </div>
+
     <form action="{{ url_for('add_employee_route') }}" method="POST" class="form-grid" novalidate>
       <div class="form-group">
-        <label for="full_name">Full Name</label>
+        <label for="full_name"><i class="fa-regular fa-id-card" aria-hidden="true"></i> Full Name</label>
         <input id="full_name" name="full_name" class="form-control"
                placeholder="e.g. Aarav Sharma" required maxlength="100" autocomplete="off">
       </div>
+
       <div class="form-group">
-        <label for="basic_salary">Basic Salary (₹)</label>
-        <input id="basic_salary" name="basic_salary" type="number"
-               class="form-control" placeholder="e.g. 45000"
-               min="1" step="0.01" required>
+        <label for="basic_salary"><i class="fa-solid fa-indian-rupee-sign" aria-hidden="true"></i> Basic Salary (₹)</label>
+        <div class="input-with-icon">
+          <i class="fa-solid fa-indian-rupee-sign" aria-hidden="true"></i>
+          <input id="basic_salary" name="basic_salary" type="number"
+                 class="form-control" placeholder="e.g. 45000"
+                 min="1" step="0.01" required>
+        </div>
       </div>
-      <button type="submit" class="btn btn-primary">Save Employee</button>
+
+      <button type="submit" class="btn btn-primary form-submit">
+        <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+        <span class="btn-label">Save Employee</span>
+      </button>
     </form>
   </section>
 
   <!-- Employees table -->
-  <section class="card">
+  <section class="card table-card">
     <div class="card-head">
-      <h2>Employees</h2>
-      <span class="muted small">{{ employees|length }} record{{ '' if employees|length == 1 else 's' }}</span>
+      <div class="section-heading compact">
+        <div class="section-icon"><i class="fa-solid fa-people-group" aria-hidden="true"></i></div>
+        <div>
+          <h2>Employees</h2>
+          <p class="muted small">Your current payroll roster.</p>
+        </div>
+      </div>
+      <span class="record-badge"><i class="fa-solid fa-database" aria-hidden="true"></i> {{ employees|length }} record{{ '' if employees|length == 1 else 's' }}</span>
     </div>
 
     {% if employees %}
@@ -78,14 +105,22 @@
           </thead>
           <tbody>
             {% for emp in employees %}
-            <tr>
-              <td><span class="chip">{{ emp.EmployeeCode }}</span></td>
-              <td>{{ emp.FullName }}</td>
-              <td>{{ emp.Designation or '—' }}</td>
-              <td class="num">{{ emp.BasicSalary | inr }}</td>
+            <tr class="employee-row">
+              <td><span class="chip"><i class="fa-solid fa-hashtag" aria-hidden="true"></i> {{ emp.EmployeeCode }}</span></td>
+              <td>
+                <div class="employee-name">
+                  <span class="avatar">{{ emp.FullName[:1]|upper }}</span>
+                  <span>{{ emp.FullName }}</span>
+                </div>
+              </td>
+              <td><span class="designation">{{ emp.Designation or '—' }}</span></td>
+              <td class="num salary-cell">{{ emp.BasicSalary | inr }}</td>
               <td class="num">
                 <a href="{{ url_for('generate_payroll', EmployeeCode=emp.EmployeeCode) }}"
-                   class="btn btn-sm btn-primary">Generate Payslip</a>
+                   class="btn btn-sm btn-primary">
+                  <i class="fa-solid fa-file-invoice-dollar" aria-hidden="true"></i>
+                  <span>Generate Payslip</span>
+                </a>
               </td>
             </tr>
             {% endfor %}
@@ -94,9 +129,10 @@
       </div>
     {% else %}
       <div class="empty-state">
-        <div class="empty-icon">📭</div>
+        <div class="empty-icon"><i class="fa-solid fa-users-slash" aria-hidden="true"></i></div>
         <h3>No employees yet</h3>
         <p class="muted">Use the form above to add your first employee.</p>
+        <a href="#add-employee" class="btn btn-ghost"><i class="fa-solid fa-user-plus" aria-hidden="true"></i> Add first employee</a>
       </div>
     {% endif %}
   </section>

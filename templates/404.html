@@ -1,10 +1,14 @@
 {% extends "base.html" %}
 {% block title %}Not Found · PayRoll{% endblock %}
 {% block content %}
-<section class="empty-state">
-  <div class="empty-icon">🔍</div>
+<section class="empty-state error-page">
+  <div class="empty-icon error-icon"><i class="fa-solid fa-compass" aria-hidden="true"></i></div>
+  <div class="page-eyebrow centered">Navigation error</div>
   <h1>404 — Page not found</h1>
-  <p class="muted">The page you're looking for doesn't exist.</p>
-  <a href="{{ url_for('index') }}" class="btn btn-primary">Back to Dashboard</a>
+  <p class="muted">The page you're looking for doesn't exist or may have moved.</p>
+  <a href="{{ url_for('index') }}" class="btn btn-primary">
+    <i class="fa-solid fa-house" aria-hidden="true"></i>
+    Back to Dashboard
+  </a>
 </section>
 {% endblock %}

@@ -3,44 +3,83 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#2563eb">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="color-scheme" content="light">
   <title>{% block title %}PayRoll{% endblock %}</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-  <header class="navbar">
-    <a href="{{ url_for('index') }}" class="brand">
-      <span class="brand-mark">₹</span>
-      <span>PayRoll</span>
-    </a>
-    <nav aria-label="Primary">
-      <a href="{{ url_for('index') }}" class="{% if request.endpoint == 'index' %}active{% endif %}">Dashboard</a>
-    </nav>
-  </header>
+  <div class="app-shell">
+    <header class="navbar">
+      <div class="nav-inner">
+        <a href="{{ url_for('index') }}" class="brand" aria-label="PayRoll Dashboard">
+          <span class="brand-mark" aria-hidden="true"><i class="fa-solid fa-wallet"></i></span>
+          <span class="brand-copy">
+            <span class="brand-name">PayRoll</span>
+            <span class="brand-subtitle">Payroll Management</span>
+          </span>
+        </a>
 
-  <main class="container">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <div class="alerts" aria-live="polite">
-          {% for category, message in messages %}
-            <div class="alert alert-{{ category }}">
-              <span class="alert-icon">{{ '✓' if category == 'success' else '!' }}</span>
-              <span>{{ message }}</span>
-            </div>
-          {% endfor %}
-        </div>
-      {% endif %}
-    {% endwith %}
+        <nav aria-label="Primary">
+          <a href="{{ url_for('index') }}" class="{% if request.endpoint == 'index' %}active{% endif %}">
+            <i class="fa-solid fa-chart-pie" aria-hidden="true"></i>
+            <span>Dashboard</span>
+          </a>
+        </nav>
+      </div>
+    </header>
 
-    {% block content %}{% endblock %}
-  </main>
+    <main class="container">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="alerts" aria-live="polite">
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }}">
+                <span class="alert-icon" aria-hidden="true">
+                  <i class="fa-solid {{ 'fa-circle-check' if category == 'success' else 'fa-circle-exclamation' }}"></i>
+                </span>
+                <span>{{ message }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
 
-  <footer class="site-footer">
-    <p>PayRoll · Internal payroll management</p>
-  </footer>
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <span><i class="fa-regular fa-copyright" aria-hidden="true"></i> PayRoll</span>
+        <span class="footer-dot" aria-hidden="true">•</span>
+        <span>Internal payroll management</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // Presentation-only enhancement: preserve all existing form/backend behavior.
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.form-control').forEach((input) => {
+        input.addEventListener('input', () => input.classList.remove('input-error'));
+      });
+
+      document.querySelectorAll('.btn[type="submit"]').forEach((button) => {
+        const form = button.closest('form');
+        if (!form) return;
+        form.addEventListener('submit', () => {
+          if (!form.checkValidity()) return;
+          button.classList.add('is-loading');
+          button.setAttribute('aria-busy', 'true');
+          button.querySelector('.btn-label')?.setAttribute('data-original', button.querySelector('.btn-label')?.textContent || '');
+        });
+      });
+    });
+  </script>
 </body>
 </html>

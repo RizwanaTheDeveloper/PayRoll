@@ -1,9 +1,15 @@
+from datetime import datetime, timedelta
 HRA_RATE = 0.25
 SPECIAL_ALLOWANCE_RATE = 0.10
 LTA_RATE = 0.05
 BONUS_RATE = 0.05
 EPF_RATE = 0.12
 PROFESSIONAL_TAX = 200
+from datetime import datetime, timedelta
+
+def current_ist_str():
+    ist_time = datetime.utcnow() + timedelta(hours=5, minutes=30)
+    return ist_time.strftime("%d %b %Y")
 def calculate_payroll(employee):
     basic = float(employee.BasicSalary)
     house_rent_allowance = basic * HRA_RATE

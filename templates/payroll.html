@@ -2,42 +2,48 @@
 {% block title %}Payslip · {{ employee.FullName }}{% endblock %}
 
 {% block content %}
-<section class="payslip">
+<section class="payslip payslip-in">
 
   <header class="payslip-head">
     <div class="payslip-brand">
-      <span class="brand-mark">₹</span>
+      <span class="brand-mark payslip-mark">
+        <i class="fa-solid fa-file-invoice-dollar" aria-hidden="true"></i>
+      </span>
       <div>
+        <div class="page-eyebrow">Payroll document</div>
         <h1>Payslip</h1>
         <p class="muted small">Monthly salary statement</p>
       </div>
     </div>
-    <span class="badge">{{ employee.EmployeeCode }}</span>
+    <span class="badge"><i class="fa-solid fa-hashtag" aria-hidden="true"></i> {{ employee.EmployeeCode }}</span>
   </header>
 
   <div class="payslip-meta">
     <div class="meta-item">
-      <span class="label">Employee Name</span>
+      <span class="label"><i class="fa-regular fa-user" aria-hidden="true"></i> Employee Name</span>
       <strong>{{ employee.FullName }}</strong>
     </div>
     <div class="meta-item">
-      <span class="label">Employee Code</span>
+      <span class="label"><i class="fa-solid fa-id-badge" aria-hidden="true"></i> Employee Code</span>
       <strong>{{ employee.EmployeeCode }}</strong>
     </div>
     <div class="meta-item">
-      <span class="label">Designation</span>
+      <span class="label"><i class="fa-solid fa-briefcase" aria-hidden="true"></i> Designation</span>
       <strong>{{ employee.Designation or '—' }}</strong>
     </div>
     <div class="meta-item">
-      <span class="label">Generated On</span>
-      <strong>{{ '' }}—</strong>
+      <span class="label"><i class="fa-regular fa-calendar" aria-hidden="true"></i> Generated On</span>
+      <strong>{{ generated_at }}</strong>
     </div>
   </div>
 
   <div class="salary-grid">
     <!-- Earnings -->
     <div class="salary-box earnings">
-      <div class="salary-heading">Earnings</div>
+      <div class="salary-box-head">
+        <div class="salary-heading"><span class="box-icon"><i class="fa-solid fa-arrow-trend-up" aria-hidden="true"></i></span> Earnings</div>
+        <span class="box-pill positive">Credit</span>
+      </div>
       <div class="salary-line"><span>Basic Salary</span><strong>{{ payroll.basic | inr }}</strong></div>
       <div class="salary-line"><span>House Rent Allowance</span><strong>{{ payroll.hra | inr }}</strong></div>
       <div class="salary-line"><span>Special Allowance</span><strong>{{ payroll.special_allowance | inr }}</strong></div>
@@ -48,7 +54,10 @@
 
     <!-- Deductions -->
     <div class="salary-box deductions">
-      <div class="salary-heading">Deductions</div>
+      <div class="salary-box-head">
+        <div class="salary-heading"><span class="box-icon"><i class="fa-solid fa-arrow-trend-down" aria-hidden="true"></i></span> Deductions</div>
+        <span class="box-pill negative">Debit</span>
+      </div>
       <div class="salary-line"><span>Professional Tax</span><strong>{{ payroll.professional_tax | inr }}</strong></div>
       <div class="salary-line"><span>Employee Provident Fund</span><strong>{{ payroll.epf | inr }}</strong></div>
       <div class="salary-line"><span>Tax Deducted at Source</span><strong>{{ payroll.tds | inr }}</strong></div>
@@ -58,14 +67,26 @@
     </div>
   </div>
 
-  <div class="net-pay">
-    <span class="net-label">Net Salary</span>
+  <div class="net-pay net-pay-in">
+    <div class="net-pay-label-wrap">
+      <span class="net-icon"><i class="fa-solid fa-sack-dollar" aria-hidden="true"></i></span>
+      <div>
+        <span class="net-label">Net Salary</span>
+        <small>Final payable amount</small>
+      </div>
+    </div>
     <strong class="net-value">{{ payroll.net_salary | inr }}</strong>
   </div>
 
   <div class="payslip-actions no-print">
-    <a href="{{ url_for('index') }}" class="btn btn-ghost">← Back to Dashboard</a>
-    <button type="button" onclick="window.print()" class="btn btn-primary">🖨 Print Payslip</button>
+    <a href="{{ url_for('index') }}" class="btn btn-ghost">
+      <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+      Back to Dashboard
+    </a>
+    <button type="button" onclick="window.print()" class="btn btn-primary">
+      <i class="fa-solid fa-print" aria-hidden="true"></i>
+      Print Payslip
+    </button>
   </div>
 </section>
 {% endblock %}
