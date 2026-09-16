@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Edit {{ employee.FullName }} · PayRoll{% endblock %}
+
+{% block content %}
+  <section class="page-head">
+    <div class="page-eyebrow"><i class="fa-solid fa-pen" aria-hidden="true"></i> Edit employee</div>
+    <div class="page-head-row">
+      <div>
+        <h1>Edit {{ employee.FullName }}</h1>
+        <p class="muted lead">Update this team member's details.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card form-card">
+    <div class="section-heading">
+      <div class="section-icon"><i class="fa-solid fa-id-badge" aria-hidden="true"></i></div>
+      <div>
+        <h2>Employee Details</h2>
+        <p class="muted small">Employee Code <strong>{{ employee.EmployeeCode }}</strong> (cannot be changed).</p>
+      </div>
+    </div>
+
+    <form action="{{ url_for('edit_employee_route', EmployeeCode=employee.EmployeeCode) }}" method="POST" class="form-grid" novalidate>
+      <div class="form-group">
+        <label for="full_name"><i class="fa-regular fa-id-card" aria-hidden="true"></i> Full Name</label>
+        <input id="full_name" name="full_name" class="form-control"
+               value="{{ employee.FullName }}" required maxlength="100" autocomplete="off">
+      </div>
+
+      <div class="form-group">
+        <label for="department"><i class="fa-solid fa-building" aria-hidden="true"></i> Department</label>
+        <input id="department" name="department" class="form-control"
+               value="{{ employee.Department or '' }}" maxlength="50" autocomplete="off">
+      </div>
+
+      <div class="form-group">
+        <label for="designation"><i class="fa-solid fa-briefcase" aria-hidden="true"></i> Designation</label>
+        <input id="designation" name="designation" class="form-control"
+               value="{{ employee.Designation or '' }}" maxlength="50" autocomplete="off">
+      </div>
+
+      <div class="form-group">
+        <label for="joining_date"><i class="fa-regular fa-calendar" aria-hidden="true"></i> Joining Date</label>
+        <input id="joining_date" name="joining_date" type="date" class="form-control"
+               value="{{ employee.JoiningDate.strftime('%Y-%m-%d') if employee.JoiningDate else '' }}" required>
+      </div>
+
+      <div class="form-group">
+        <label for="basic_salary"><i class="fa-solid fa-indian-rupee-sign" aria-hidden="true"></i> Basic Salary (₹)</label>
+        <div class="input-with-icon">
+          <i class="fa-solid fa-indian-rupee-sign" aria-hidden="true"></i>
+          <input id="basic_salary" name="basic_salary" type="number"
+                 class="form-control" value="{{ employee.BasicSalary }}"
+                 min="1" step="0.01" required>
+        </div>
+      </div>
+
+      <div class="form-actions-row">
+        <button type="submit" class="btn btn-primary form-submit">
+          <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+          <span class="btn-label">Save Changes</span>
+        </button>
+        <a href="{{ url_for('index') }}" class="btn btn-ghost">
+          <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+          Cancel
+        </a>
+      </div>
+    </form>
+  </section>
+{% endblock %}

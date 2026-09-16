@@ -37,6 +37,17 @@
     </div>
   </div>
 
+  {% if payroll.hikes_applied and payroll.hikes_applied > 0 %}
+  <div class="hike-note">
+    <i class="fa-solid fa-arrow-trend-up" aria-hidden="true"></i>
+    <span>
+      Basic salary reflects <strong>{{ payroll.hikes_applied }}</strong> automatic hike{{ '' if payroll.hikes_applied == 1 else 's' }}
+      of 3% (every 6 months since joining) — up from
+      <strong>{{ payroll.original_basic | inr }}</strong> to <strong>{{ payroll.basic | inr }}</strong>.
+    </span>
+  </div>
+  {% endif %}
+
   <div class="salary-grid">
     <!-- Earnings -->
     <div class="salary-box earnings">

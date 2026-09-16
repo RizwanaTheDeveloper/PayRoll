@@ -385,12 +385,21 @@ a { color: inherit; }
 }
 .compact .section-icon { width: 36px; height: 36px; }
 
+/* Form grid: generalized to handle any number of fields (2 for quick
+   forms, 5 for the fuller Add/Edit Employee forms). The submit button(s)
+   live in their own full-width row via .form-actions-row. */
 .form-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
-  align-items: end;
   margin-top: 20px;
+}
+
+.form-actions-row {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
 }
 
 .form-group {
@@ -492,6 +501,20 @@ a { color: inherit; }
   transform: translateY(-1px);
 }
 
+/* New: destructive action button, for Delete */
+.btn-danger {
+  color: var(--red);
+  background: var(--red-50);
+  border-color: #fecaca;
+}
+.btn-danger:hover {
+  color: #fff;
+  background: var(--red);
+  border-color: var(--red);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(180,35,24,.22);
+}
+
 .form-submit { min-height: 48px; }
 .btn.is-loading { pointer-events: none; opacity: .75; }
 .btn.is-loading::after {
@@ -536,7 +559,7 @@ table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  min-width: 760px;
+  min-width: 900px;
 }
 
 thead th {
@@ -612,6 +635,21 @@ tbody tr:last-child td { border-bottom: none; }
   padding: 8px 11px;
   font-size: .74rem;
   border-radius: 9px;
+}
+
+/* New: row of action buttons (Payslip / Edit / Delete) that wraps
+   cleanly on narrow tables instead of overflowing the cell. */
+.row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.inline-form {
+  display: inline-flex;
+  margin: 0;
 }
 
 .empty-state {
@@ -721,6 +759,26 @@ tbody tr:last-child td { border-bottom: none; }
   color: var(--ink);
   font-size: .86rem;
 }
+
+/* New: hike disclosure banner shown on the payslip when an automatic
+   6-month/3% hike has been applied to the basic salary. */
+.hike-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 13px 16px;
+  border-radius: 12px;
+  background: var(--green-50);
+  border: 1px solid #bbf7d0;
+  color: #14532d;
+  font-size: .84rem;
+  margin-bottom: 20px;
+}
+.hike-note i {
+  margin-top: 2px;
+  color: var(--green);
+}
+.hike-note strong { color: #065f46; }
 
 .salary-grid {
   display: grid;
@@ -924,6 +982,7 @@ tbody tr:last-child td { border-bottom: none; }
   .payslip-meta { grid-template-columns: 1fr 1fr; }
   .payslip-actions { flex-direction: column-reverse; }
   .payslip-actions .btn { width: 100%; }
+  .row-actions { justify-content: flex-start; }
 }
 
 @media (max-width: 520px) {

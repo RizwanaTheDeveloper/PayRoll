@@ -62,6 +62,23 @@
       </div>
 
       <div class="form-group">
+        <label for="department"><i class="fa-solid fa-building" aria-hidden="true"></i> Department</label>
+        <input id="department" name="department" class="form-control"
+               placeholder="e.g. Engineering" maxlength="50" autocomplete="off">
+      </div>
+
+      <div class="form-group">
+        <label for="designation"><i class="fa-solid fa-briefcase" aria-hidden="true"></i> Designation</label>
+        <input id="designation" name="designation" class="form-control"
+               placeholder="e.g. Software Engineer" maxlength="50" autocomplete="off">
+      </div>
+
+      <div class="form-group">
+        <label for="joining_date"><i class="fa-regular fa-calendar" aria-hidden="true"></i> Joining Date</label>
+        <input id="joining_date" name="joining_date" type="date" class="form-control" required>
+      </div>
+
+      <div class="form-group">
         <label for="basic_salary"><i class="fa-solid fa-indian-rupee-sign" aria-hidden="true"></i> Basic Salary (₹)</label>
         <div class="input-with-icon">
           <i class="fa-solid fa-indian-rupee-sign" aria-hidden="true"></i>
@@ -71,10 +88,12 @@
         </div>
       </div>
 
-      <button type="submit" class="btn btn-primary form-submit">
-        <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
-        <span class="btn-label">Save Employee</span>
-      </button>
+      <div class="form-actions-row">
+        <button type="submit" class="btn btn-primary form-submit">
+          <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+          <span class="btn-label">Save Employee</span>
+        </button>
+      </div>
     </form>
   </section>
 
@@ -98,7 +117,9 @@
             <tr>
               <th>Code</th>
               <th>Full Name</th>
+              <th>Department</th>
               <th>Designation</th>
+              <th>Joining Date</th>
               <th class="num">Basic Salary</th>
               <th class="num">Actions</th>
             </tr>
@@ -113,14 +134,32 @@
                   <span>{{ emp.FullName }}</span>
                 </div>
               </td>
+              <td><span class="designation">{{ emp.Department or '—' }}</span></td>
               <td><span class="designation">{{ emp.Designation or '—' }}</span></td>
+              <td><span class="designation">{{ emp.JoiningDate.strftime('%d %b %Y') if emp.JoiningDate else '—' }}</span></td>
               <td class="num salary-cell">{{ emp.BasicSalary | inr }}</td>
               <td class="num">
-                <a href="{{ url_for('generate_payroll', EmployeeCode=emp.EmployeeCode) }}"
-                   class="btn btn-sm btn-primary">
-                  <i class="fa-solid fa-file-invoice-dollar" aria-hidden="true"></i>
-                  <span>Generate Payslip</span>
-                </a>
+                <div class="row-actions">
+                  <a href="{{ url_for('generate_payroll', EmployeeCode=emp.EmployeeCode) }}"
+                     class="btn btn-sm btn-primary">
+                    <i class="fa-solid fa-file-invoice-dollar" aria-hidden="true"></i>
+                    <span>Payslip</span>
+                  </a>
+                  <a href="{{ url_for('edit_employee_route', EmployeeCode=emp.EmployeeCode) }}"
+                     class="btn btn-sm btn-ghost">
+                    <i class="fa-solid fa-pen" aria-hidden="true"></i>
+                    <span>Edit</span>
+                  </a>
+                  <form action="{{ url_for('delete_employee_route', EmployeeCode=emp.EmployeeCode) }}"
+                        method="POST"
+                        onsubmit="return confirm('Delete {{ emp.FullName }}? This cannot be undone.');"
+                        class="inline-form">
+                    <button type="submit" class="btn btn-sm btn-danger">
+                      <i class="fa-solid fa-trash" aria-hidden="true"></i>
+                      <span>Delete</span>
+                    </button>
+                  </form>
+                </div>
               </td>
             </tr>
             {% endfor %}
