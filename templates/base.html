@@ -21,7 +21,7 @@
           <span class="brand-mark" aria-hidden="true"><i class="fa-solid fa-wallet"></i></span>
           <span class="brand-copy">
             <span class="brand-name">PayRoll</span>
-            <span class="brand-subtitle">Payroll Management</span>
+            <span class="brand-subtitle">{{ company_name }}</span>
           </span>
         </a>
 
@@ -37,13 +37,16 @@
     <main class="container">
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-          <div class="alerts" aria-live="polite">
+          <div class="alerts" aria-live="polite" id="flash-alerts">
             {% for category, message in messages %}
-              <div class="alert alert-{{ category }}">
+              <div class="alert alert-{{ category }}" data-autohide="3000">
                 <span class="alert-icon" aria-hidden="true">
                   <i class="fa-solid {{ 'fa-circle-check' if category == 'success' else 'fa-circle-exclamation' }}"></i>
                 </span>
-                <span>{{ message }}</span>
+                <span class="alert-message">{{ message }}</span>
+                <button type="button" class="alert-close" aria-label="Dismiss">
+                  <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
               </div>
             {% endfor %}
           </div>
@@ -55,16 +58,16 @@
 
     <footer class="site-footer">
       <div class="footer-inner">
-        <span><i class="fa-regular fa-copyright" aria-hidden="true"></i> PayRoll</span>
+        <span><i class="fa-regular fa-copyright" aria-hidden="true"></i> {{ company_name }}</span>
         <span class="footer-dot" aria-hidden="true">•</span>
-        <span>Internal payroll management</span>
+        <span>PayRoll · Internal payroll management</span>
       </div>
     </footer>
   </div>
 
   <script>
-    // Presentation-only enhancement: preserve all existing form/backend behavior.
     document.addEventListener('DOMContentLoaded', () => {
+      // Presentation-only enhancement: preserve all existing form/backend behavior.
       document.querySelectorAll('.form-control').forEach((input) => {
         input.addEventListener('input', () => input.classList.remove('input-error'));
       });
@@ -78,6 +81,27 @@
           button.setAttribute('aria-busy', 'true');
           button.querySelector('.btn-label')?.setAttribute('data-original', button.querySelector('.btn-label')?.textContent || '');
         });
+      });
+
+      // Add/Update/Delete confirmation popups: auto-dismiss after ~3s,
+      // or immediately if the person clicks the close (X) button.
+      document.querySelectorAll('.alert[data-autohide]').forEach((alertEl) => {
+        const delay = parseInt(alertEl.dataset.autohide, 10) || 3000;
+
+        const dismiss = () => {
+          alertEl.classList.add('alert-hide');
+          setTimeout(() => alertEl.remove(), 220);
+        };
+
+        const timer = setTimeout(dismiss, delay);
+
+        const closeBtn = alertEl.querySelector('.alert-close');
+        if (closeBtn) {
+          closeBtn.addEventListener('click', () => {
+            clearTimeout(timer);
+            dismiss();
+          });
+        }
       });
     });
   </script>

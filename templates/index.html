@@ -26,9 +26,9 @@
     <div class="stat-card stat-amber">
       <div class="stat-icon"><i class="fa-solid fa-indian-rupee-sign" aria-hidden="true"></i></div>
       <div class="stat-content">
-        <div class="stat-label">Total Basic Payroll</div>
+        <div class="stat-label">Total Annual CTC</div>
         <div class="value">
-          {{ (employees | sum(attribute='BasicSalary')) | inr if employees else '₹0.00' }}
+          {{ (employees | sum(attribute='CTC')) | inr if employees else '₹0.00' }}
         </div>
         <div class="stat-caption"><i class="fa-solid fa-wallet" aria-hidden="true"></i> Across listed employees</div>
       </div>
@@ -79,13 +79,45 @@
       </div>
 
       <div class="form-group">
-        <label for="basic_salary"><i class="fa-solid fa-indian-rupee-sign" aria-hidden="true"></i> Basic Salary (₹)</label>
+        <label for="ctc"><i class="fa-solid fa-indian-rupee-sign" aria-hidden="true"></i> CTC — Annual (₹)</label>
         <div class="input-with-icon">
           <i class="fa-solid fa-indian-rupee-sign" aria-hidden="true"></i>
-          <input id="basic_salary" name="basic_salary" type="number"
-                 class="form-control" placeholder="e.g. 45000"
+          <input id="ctc" name="ctc" type="number"
+                 class="form-control" placeholder="e.g. 600000"
                  min="1" step="0.01" required>
         </div>
+      </div>
+
+      <div class="form-group">
+        <label for="regime_opted"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i> Regime Opted</label>
+        <select id="regime_opted" name="regime_opted" class="form-control">
+          <option value="New" selected>New Regime</option>
+          <option value="Old">Old Regime</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="pan"><i class="fa-solid fa-id-badge" aria-hidden="true"></i> PAN</label>
+        <input id="pan" name="pan" class="form-control"
+               placeholder="e.g. DGPPP2193K" maxlength="10" autocomplete="off" style="text-transform:uppercase;">
+      </div>
+
+      <div class="form-group">
+        <label for="pf_uan"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> PF UAN</label>
+        <input id="pf_uan" name="pf_uan" class="form-control"
+               placeholder="e.g. 101829855278" maxlength="20" autocomplete="off">
+      </div>
+
+      <div class="form-group">
+        <label for="account_number"><i class="fa-solid fa-building-columns" aria-hidden="true"></i> Account No.</label>
+        <input id="account_number" name="account_number" class="form-control"
+               placeholder="e.g. 3689680025" maxlength="30" autocomplete="off">
+      </div>
+
+      <div class="form-group">
+        <label for="ifsc_code"><i class="fa-solid fa-landmark" aria-hidden="true"></i> IFSC Code</label>
+        <input id="ifsc_code" name="ifsc_code" class="form-control"
+               placeholder="e.g. CBIN0280826" maxlength="15" autocomplete="off" style="text-transform:uppercase;">
       </div>
 
       <div class="form-actions-row">
@@ -120,7 +152,7 @@
               <th>Department</th>
               <th>Designation</th>
               <th>Joining Date</th>
-              <th class="num">Basic Salary</th>
+              <th class="num">CTC (Annual)</th>
               <th class="num">Actions</th>
             </tr>
           </thead>
@@ -137,7 +169,7 @@
               <td><span class="designation">{{ emp.Department or '—' }}</span></td>
               <td><span class="designation">{{ emp.Designation or '—' }}</span></td>
               <td><span class="designation">{{ emp.JoiningDate.strftime('%d %b %Y') if emp.JoiningDate else '—' }}</span></td>
-              <td class="num salary-cell">{{ emp.BasicSalary | inr }}</td>
+              <td class="num salary-cell">{{ emp.CTC | inr }}</td>
               <td class="num">
                 <div class="row-actions">
                   <a href="{{ url_for('generate_payroll', EmployeeCode=emp.EmployeeCode) }}"

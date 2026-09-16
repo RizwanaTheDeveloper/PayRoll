@@ -47,13 +47,45 @@
       </div>
 
       <div class="form-group">
-        <label for="basic_salary"><i class="fa-solid fa-indian-rupee-sign" aria-hidden="true"></i> Basic Salary (₹)</label>
+        <label for="ctc"><i class="fa-solid fa-indian-rupee-sign" aria-hidden="true"></i> CTC — Annual (₹)</label>
         <div class="input-with-icon">
           <i class="fa-solid fa-indian-rupee-sign" aria-hidden="true"></i>
-          <input id="basic_salary" name="basic_salary" type="number"
-                 class="form-control" value="{{ employee.BasicSalary }}"
+          <input id="ctc" name="ctc" type="number"
+                 class="form-control" value="{{ employee.CTC }}"
                  min="1" step="0.01" required>
         </div>
+      </div>
+
+      <div class="form-group">
+        <label for="regime_opted"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i> Regime Opted</label>
+        <select id="regime_opted" name="regime_opted" class="form-control">
+          <option value="New" {{ 'selected' if employee.RegimeOpted == 'New' else '' }}>New Regime</option>
+          <option value="Old" {{ 'selected' if employee.RegimeOpted == 'Old' else '' }}>Old Regime</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="pan"><i class="fa-solid fa-id-badge" aria-hidden="true"></i> PAN</label>
+        <input id="pan" name="pan" class="form-control"
+               value="{{ employee.PAN or '' }}" maxlength="10" autocomplete="off" style="text-transform:uppercase;">
+      </div>
+
+      <div class="form-group">
+        <label for="pf_uan"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> PF UAN</label>
+        <input id="pf_uan" name="pf_uan" class="form-control"
+               value="{{ employee.PFUAN or '' }}" maxlength="20" autocomplete="off">
+      </div>
+
+      <div class="form-group">
+        <label for="account_number"><i class="fa-solid fa-building-columns" aria-hidden="true"></i> Account No.</label>
+        <input id="account_number" name="account_number" class="form-control"
+               value="{{ employee.AccountNumber or '' }}" maxlength="30" autocomplete="off">
+      </div>
+
+      <div class="form-group">
+        <label for="ifsc_code"><i class="fa-solid fa-landmark" aria-hidden="true"></i> IFSC Code</label>
+        <input id="ifsc_code" name="ifsc_code" class="form-control"
+               value="{{ employee.IFSCCode or '' }}" maxlength="15" autocomplete="off" style="text-transform:uppercase;">
       </div>
 
       <div class="form-actions-row">

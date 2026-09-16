@@ -10,7 +10,7 @@
         <i class="fa-solid fa-file-invoice-dollar" aria-hidden="true"></i>
       </span>
       <div>
-        <div class="page-eyebrow">Payroll document</div>
+        <div class="page-eyebrow">{{ company_name }}</div>
         <h1>Payslip</h1>
         <p class="muted small">Monthly salary statement</p>
       </div>
@@ -41,18 +41,141 @@
   <div class="hike-note">
     <i class="fa-solid fa-arrow-trend-up" aria-hidden="true"></i>
     <span>
-      Basic salary reflects <strong>{{ payroll.hikes_applied }}</strong> automatic hike{{ '' if payroll.hikes_applied == 1 else 's' }}
+      CTC reflects <strong>{{ payroll.hikes_applied }}</strong> automatic hike{{ '' if payroll.hikes_applied == 1 else 's' }}
       of 3% (every 6 months since joining) — up from
-      <strong>{{ payroll.original_basic | inr }}</strong> to <strong>{{ payroll.basic | inr }}</strong>.
+      <strong>{{ payroll.original_ctc | inr }}</strong> to <strong>{{ payroll.ctc | inr }}</strong> annually.
     </span>
   </div>
   {% endif %}
+
+  <!-- Employee bank & tax details -->
+  <div class="detail-panel">
+    <div class="detail-panel-heading">
+      <i class="fa-solid fa-id-card-clip" aria-hidden="true"></i> Employee Details
+    </div>
+    <div class="details-list">
+      <div class="detail-row">
+        <span class="detail-label"><i class="fa-solid fa-id-badge" aria-hidden="true"></i> PAN</span>
+        <span class="detail-value">{{ employee.PAN or '—' }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> PF UAN</span>
+        <span class="detail-value">{{ employee.PFUAN or '—' }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label"><i class="fa-solid fa-building-columns" aria-hidden="true"></i> Account No.</span>
+        <span class="detail-value">{{ employee.AccountNumber or '—' }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label"><i class="fa-solid fa-landmark" aria-hidden="true"></i> IFSC Code</span>
+        <span class="detail-value">{{ employee.IFSCCode or '—' }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label"><i class="fa-regular fa-calendar-check" aria-hidden="true"></i> Date of Joining</span>
+        <span class="detail-value">{{ employee.JoiningDate.strftime('%d %B %Y') if employee.JoiningDate else '—' }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i> Regime Opted</span>
+        <span class="detail-value">{{ employee.RegimeOpted or 'New' }} Regime</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Yearly taxable income breakup -->
+  <div class="detail-panel">
+    <div class="detail-panel-heading">
+      <i class="fa-solid fa-table-list" aria-hidden="true"></i> Yearly Taxable Income
+    </div>
+    <table class="breakdown-table">
+      <thead>
+        <tr><th>Description</th><th class="num">Amount (Annual)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Basic Salary</td><td class="num">{{ (payroll.basic * 12) | inr }}</td></tr>
+        <tr><td>HRA</td><td class="num">{{ (payroll.hra * 12) | inr }}</td></tr>
+        <tr><td>Special Allowance</td><td class="num">{{ (payroll.special_allowance * 12) | inr }}</td></tr>
+        <tr><td>Leave &amp; Travel Allowance</td><td class="num">{{ (payroll.lta * 12) | inr }}</td></tr>
+        <tr><td>Bonus</td><td class="num">{{ (payroll.bonus * 12) | inr }}</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Net taxable income -->
+  <div class="detail-panel">
+    <div class="detail-panel-heading">
+      <i class="fa-solid fa-calculator" aria-hidden="true"></i> Net Taxable Income (E)
+    </div>
+    <div class="details-list">
+      <div class="detail-row">
+        <span class="detail-label">Annual Taxable Salary (C)</span>
+        <span class="detail-value">{{ tax.annual_taxable_salary | inr }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Standard Deductions (Section 16)</span>
+        <span class="detail-value">{{ tax.standard_deduction | inr }}</span>
+      </div>
+      <div class="detail-row detail-row-total">
+        <span class="detail-label">Net Taxable Income (E)</span>
+        <span class="detail-value">{{ tax.net_taxable_income | inr }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tax for FY -->
+  <div class="detail-panel">
+    <div class="detail-panel-heading">
+      <i class="fa-solid fa-file-invoice" aria-hidden="true"></i> Tax for FY {{ fy_label }}
+    </div>
+    <div class="details-list">
+      <div class="detail-row">
+        <span class="detail-label">TDS at Normal Rate</span>
+        <span class="detail-value">{{ tax.tds_at_normal_rate | inr }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Rebate</span>
+        <span class="detail-value">{{ tax.rebate | inr }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Tax on Taxable Income</span>
+        <span class="detail-value">{{ tax.tax_on_taxable_income | inr }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Education Cess</span>
+        <span class="detail-value">{{ tax.education_cess | inr }}</span>
+      </div>
+      <div class="detail-row detail-row-total">
+        <span class="detail-label">Net Tax</span>
+        <span class="detail-value">{{ tax.net_tax | inr }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Tax Deducted Till Date (Current Employer)</span>
+        <span class="detail-value">{{ tax_deducted_till_date | inr }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tax for current month -->
+  <div class="detail-panel">
+    <div class="detail-panel-heading">
+      <i class="fa-regular fa-calendar-days" aria-hidden="true"></i> Tax for Current Month
+    </div>
+    <div class="details-list">
+      <div class="detail-row">
+        <span class="detail-label">Tax to be Deducted This Month</span>
+        <span class="detail-value">{{ payroll.tds | inr }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">No. of Payroll Executions Left in this Financial Year</span>
+        <span class="detail-value">{{ executions_left }}</span>
+      </div>
+    </div>
+  </div>
 
   <div class="salary-grid">
     <!-- Earnings -->
     <div class="salary-box earnings">
       <div class="salary-box-head">
-        <div class="salary-heading"><span class="box-icon"><i class="fa-solid fa-arrow-trend-up" aria-hidden="true"></i></span> Earnings</div>
+        <div class="salary-heading"><span class="box-icon"><i class="fa-solid fa-arrow-trend-up" aria-hidden="true"></i></span> Earnings (Monthly)</div>
         <span class="box-pill positive">Credit</span>
       </div>
       <div class="salary-line"><span>Basic Salary</span><strong>{{ payroll.basic | inr }}</strong></div>
@@ -66,7 +189,7 @@
     <!-- Deductions -->
     <div class="salary-box deductions">
       <div class="salary-box-head">
-        <div class="salary-heading"><span class="box-icon"><i class="fa-solid fa-arrow-trend-down" aria-hidden="true"></i></span> Deductions</div>
+        <div class="salary-heading"><span class="box-icon"><i class="fa-solid fa-arrow-trend-down" aria-hidden="true"></i></span> Deductions (Monthly)</div>
         <span class="box-pill negative">Debit</span>
       </div>
       <div class="salary-line"><span>Professional Tax</span><strong>{{ payroll.professional_tax | inr }}</strong></div>

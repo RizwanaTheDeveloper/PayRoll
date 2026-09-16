@@ -1,7 +1,5 @@
 /* ===========================================================
    PayRoll — Professional UI
-   Presentation layer only. Existing Flask/Jinja data and routes
-   remain unchanged.
    =========================================================== */
 
 :root {
@@ -55,9 +53,10 @@ body {
   color: var(--text);
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
-button, input { font: inherit; }
+button, input, select { font: inherit; }
 
 a { color: inherit; }
 
@@ -85,6 +84,8 @@ a { color: inherit; }
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .brand {
@@ -92,6 +93,7 @@ a { color: inherit; }
   align-items: center;
   gap: 12px;
   text-decoration: none;
+  min-width: 0;
 }
 
 .brand-mark {
@@ -105,6 +107,7 @@ a { color: inherit; }
   color: #fff;
   box-shadow: 0 10px 24px rgba(37,99,235,.25);
   transition: transform .22s ease, box-shadow .22s ease;
+  flex: 0 0 auto;
 }
 
 .brand:hover .brand-mark {
@@ -112,7 +115,7 @@ a { color: inherit; }
   box-shadow: 0 14px 28px rgba(37,99,235,.30);
 }
 
-.brand-copy { display: flex; flex-direction: column; line-height: 1.1; }
+.brand-copy { display: flex; flex-direction: column; line-height: 1.1; min-width: 0; }
 .brand-name {
   font-family: var(--font-display);
   font-size: 1.05rem;
@@ -124,8 +127,12 @@ a { color: inherit; }
   font-size: .68rem;
   font-weight: 600;
   color: var(--muted);
-  letter-spacing: .08em;
+  letter-spacing: .04em;
   text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 46vw;
 }
 
 .navbar nav { display: flex; align-items: center; gap: 6px; }
@@ -170,6 +177,7 @@ a { color: inherit; }
   align-items: flex-end;
   justify-content: space-between;
   gap: 24px;
+  flex-wrap: wrap;
 }
 
 .page-eyebrow {
@@ -191,7 +199,7 @@ a { color: inherit; }
   margin: 0;
   font-family: var(--font-display);
   color: var(--ink);
-  font-size: clamp(2rem, 3vw, 2.55rem);
+  font-size: clamp(1.7rem, 3vw, 2.55rem);
   line-height: 1.12;
   letter-spacing: -.045em;
 }
@@ -202,7 +210,7 @@ a { color: inherit; }
   border-top: 1px solid var(--line);
   background: rgba(255,255,255,.55);
   color: var(--muted);
-  padding: 24px;
+  padding: 24px 16px;
 }
 
 .footer-inner {
@@ -211,25 +219,35 @@ a { color: inherit; }
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-wrap: wrap;
   gap: 9px;
   font-size: .78rem;
+  text-align: center;
 }
 
 .footer-dot { opacity: .4; }
 
+/* ---------- Alerts / auto-dismiss popups ---------- */
 .alerts { margin-bottom: 22px; }
 
 .alert {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 11px;
-  padding: 13px 16px;
+  padding: 13px 42px 13px 16px;
   border-radius: 13px;
   border: 1px solid transparent;
   margin-bottom: 10px;
   font-size: .9rem;
   font-weight: 600;
   animation: fadeSlideDown .34s ease both;
+  transition: opacity .2s ease, transform .2s ease, max-height .2s ease;
+}
+
+.alert.alert-hide {
+  opacity: 0;
+  transform: translateY(-6px) scale(.98);
 }
 
 .alert-icon {
@@ -240,6 +258,28 @@ a { color: inherit; }
   justify-content: center;
   flex: 0 0 auto;
 }
+
+.alert-message { flex: 1 1 auto; }
+
+.alert-close {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  opacity: .65;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: opacity .15s ease, background .15s ease;
+}
+.alert-close:hover { opacity: 1; background: rgba(0,0,0,.06); }
 
 .alert-success { background: var(--green-50); color: var(--green); border-color: #bbf7d0; }
 .alert-error { background: var(--red-50); color: var(--red); border-color: #fecaca; }
@@ -318,9 +358,10 @@ a { color: inherit; }
   margin-top: 4px;
   color: var(--ink);
   font-family: var(--font-display);
-  font-size: clamp(1.35rem, 2vw, 1.8rem);
+  font-size: clamp(1.2rem, 2vw, 1.8rem);
   font-weight: 800;
   letter-spacing: -.04em;
+  word-break: break-word;
 }
 .stat-caption {
   margin-top: 8px;
@@ -382,12 +423,12 @@ a { color: inherit; }
   border-radius: 11px;
   color: var(--primary-600);
   background: var(--primary-50);
+  flex: 0 0 auto;
 }
 .compact .section-icon { width: 36px; height: 36px; }
 
-/* Form grid: generalized to handle any number of fields (2 for quick
-   forms, 5 for the fuller Add/Edit Employee forms). The submit button(s)
-   live in their own full-width row via .form-actions-row. */
+/* Form grid: generalized to handle any number of fields. The submit
+   button(s) live in their own full-width row via .form-actions-row. */
 .form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -400,6 +441,7 @@ a { color: inherit; }
   display: flex;
   gap: 12px;
   margin-top: 4px;
+  flex-wrap: wrap;
 }
 
 .form-group {
@@ -429,7 +471,14 @@ a { color: inherit; }
   color: var(--ink);
   font-size: .92rem;
   transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+  /* Cursor changes to a pointer while resting over the field; switches
+     back to the normal text caret the moment it's focused for typing. */
+  cursor: pointer;
 }
+
+.form-control:focus { cursor: text; }
+
+select.form-control { cursor: pointer; }
 
 .form-control::placeholder { color: #94a3b8; }
 
@@ -501,7 +550,6 @@ a { color: inherit; }
   transform: translateY(-1px);
 }
 
-/* New: destructive action button, for Delete */
 .btn-danger {
   color: var(--red);
   background: var(--red-50);
@@ -534,6 +582,7 @@ a { color: inherit; }
   justify-content: space-between;
   gap: 18px;
   margin-bottom: 18px;
+  flex-wrap: wrap;
 }
 
 .record-badge {
@@ -553,13 +602,14 @@ a { color: inherit; }
   overflow-x: auto;
   border: 1px solid var(--line);
   border-radius: 13px;
+  -webkit-overflow-scrolling: touch;
 }
 
 table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  min-width: 900px;
+  min-width: 880px;
 }
 
 thead th {
@@ -572,6 +622,7 @@ thead th {
   text-transform: uppercase;
   letter-spacing: .08em;
   font-weight: 800;
+  white-space: nowrap;
 }
 thead th:first-child { border-top-left-radius: 13px; }
 thead th:last-child { border-top-right-radius: 13px; }
@@ -604,6 +655,7 @@ tbody tr:last-child td { border-bottom: none; }
   font-size: .73rem;
   font-weight: 800;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  white-space: nowrap;
 }
 
 .employee-name {
@@ -625,10 +677,11 @@ tbody tr:last-child td { border-bottom: none; }
   background: var(--primary-50);
   font-size: .74rem;
   font-weight: 900;
+  flex: 0 0 auto;
 }
 
 .designation { color: #64748b; }
-.salary-cell { color: var(--ink); font-weight: 800; }
+.salary-cell { color: var(--ink); font-weight: 800; white-space: nowrap; }
 
 .btn-sm {
   min-height: 36px;
@@ -637,8 +690,6 @@ tbody tr:last-child td { border-bottom: none; }
   border-radius: 9px;
 }
 
-/* New: row of action buttons (Payslip / Edit / Delete) that wraps
-   cleanly on narrow tables instead of overflowing the cell. */
 .row-actions {
   display: flex;
   align-items: center;
@@ -707,13 +758,15 @@ tbody tr:last-child td { border-bottom: none; }
   padding-bottom: 22px;
   border-bottom: 1px solid var(--line);
   margin-bottom: 24px;
+  flex-wrap: wrap;
 }
 .payslip-brand {
   display: flex;
   align-items: center;
   gap: 13px;
+  min-width: 0;
 }
-.payslip-brand .brand-mark { width: 48px; height: 48px; border-radius: 14px; }
+.payslip-brand .brand-mark { width: 48px; height: 48px; border-radius: 14px; flex: 0 0 auto; }
 .payslip-brand h1 { font-size: 1.55rem; }
 .payslip-mark { box-shadow: 0 12px 28px rgba(37,99,235,.22); }
 
@@ -728,6 +781,7 @@ tbody tr:last-child td { border-bottom: none; }
   border: 1px solid var(--line);
   font-size: .76rem;
   font-weight: 800;
+  white-space: nowrap;
 }
 
 .payslip-meta {
@@ -742,6 +796,7 @@ tbody tr:last-child td { border-bottom: none; }
   border: 1px solid #edf2f7;
   border-radius: 12px;
   background: #fbfdff;
+  min-width: 0;
 }
 .meta-item .label {
   display: flex;
@@ -758,10 +813,9 @@ tbody tr:last-child td { border-bottom: none; }
   display: block;
   color: var(--ink);
   font-size: .86rem;
+  word-break: break-word;
 }
 
-/* New: hike disclosure banner shown on the payslip when an automatic
-   6-month/3% hike has been applied to the basic salary. */
 .hike-note {
   display: flex;
   align-items: flex-start;
@@ -780,6 +834,89 @@ tbody tr:last-child td { border-bottom: none; }
 }
 .hike-note strong { color: #065f46; }
 
+/* ---------- Detail panels (Employee Details / Net Taxable Income / Tax for FY / Tax for current month) ---------- */
+.detail-panel {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 18px;
+  background: #fff;
+}
+
+.detail-panel-heading {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: .96rem;
+  color: var(--ink);
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eef2f7;
+}
+.detail-panel-heading i { color: var(--primary-600); }
+
+.details-list { display: flex; flex-direction: column; }
+
+.detail-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 2px;
+  border-bottom: 1px dashed #eef2f7;
+  font-size: .87rem;
+}
+.detail-row:last-child { border-bottom: none; }
+
+.detail-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.detail-label i { color: #94a3b8; width: 14px; text-align: center; }
+
+.detail-value {
+  color: var(--ink);
+  font-weight: 700;
+  text-align: right;
+  word-break: break-word;
+}
+
+.detail-row-total {
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-strong);
+  border-bottom: none;
+}
+.detail-row-total .detail-label { color: var(--ink); font-weight: 800; }
+.detail-row-total .detail-value { color: var(--primary-600); font-size: 1rem; }
+
+.breakdown-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.breakdown-table th {
+  text-align: left;
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--muted);
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--line);
+}
+.breakdown-table th.num, .breakdown-table td.num { text-align: right; }
+.breakdown-table td {
+  padding: 10px 6px;
+  border-bottom: 1px dashed #eef2f7;
+  font-size: .87rem;
+  color: var(--text);
+}
+.breakdown-table tr:last-child td { border-bottom: none; }
+
 .salary-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -792,6 +929,7 @@ tbody tr:last-child td { border-bottom: none; }
   border-radius: 15px;
   padding: 18px;
   background: #fff;
+  min-width: 0;
 }
 
 .earnings {
@@ -807,6 +945,7 @@ tbody tr:last-child td { border-bottom: none; }
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 8px;
+  flex-wrap: wrap;
 }
 
 .salary-heading {
@@ -881,6 +1020,7 @@ tbody tr:last-child td { border-bottom: none; }
   background:
     linear-gradient(135deg, #eff6ff, #f8fbff);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.8);
+  flex-wrap: wrap;
 }
 .net-pay-in {
   animation: fadeIn .6s .12s both;
@@ -901,6 +1041,7 @@ tbody tr:last-child td { border-bottom: none; }
   color: var(--primary-600);
   background: #fff;
   box-shadow: var(--shadow-sm);
+  flex: 0 0 auto;
 }
 .net-label {
   display: block;
@@ -917,16 +1058,18 @@ tbody tr:last-child td { border-bottom: none; }
 .net-value {
   color: var(--primary-600);
   font-family: var(--font-display);
-  font-size: clamp(1.55rem, 3vw, 2.15rem);
+  font-size: clamp(1.4rem, 3vw, 2.15rem);
   font-weight: 800;
   letter-spacing: -.045em;
   animation: pulseOnce .65s .18s both;
+  word-break: break-word;
 }
 
 .payslip-actions {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -960,38 +1103,50 @@ tbody tr:last-child td { border-bottom: none; }
     box-shadow: none;
     padding: 0;
   }
-  .salary-box, .meta-item { break-inside: avoid; }
+  .salary-box, .meta-item, .detail-panel { break-inside: avoid; }
 }
 
+/* ---------- Responsive: tablets ---------- */
 @media (max-width: 980px) {
   .stats-grid { grid-template-columns: 1fr; }
   .payslip-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
+/* ---------- Responsive: small tablets / large phones ---------- */
 @media (max-width: 780px) {
-  .container { width: min(100% - 28px, 1180px); padding-top: 30px; }
-  .nav-inner { padding: 0 14px; min-height: 68px; }
-  .brand-subtitle { display: none; }
+  .container { width: min(100% - 24px, 1180px); padding: 28px 0 50px; }
+  .nav-inner { padding: 0 14px; min-height: 64px; }
+  .brand-subtitle { max-width: 60vw; }
   .page-head-row { align-items: flex-start; flex-direction: column; }
-  .page-head-action { width: 100%; }
   .form-grid { grid-template-columns: 1fr; }
   .form-submit { width: 100%; }
+  .form-actions-row { flex-direction: column; }
+  .form-actions-row .btn { width: 100%; }
   .salary-grid { grid-template-columns: 1fr; }
-  .payslip { padding: 22px; border-radius: 16px; }
+  .payslip { padding: 20px; border-radius: 16px; }
   .payslip-head { flex-direction: column; }
   .payslip-meta { grid-template-columns: 1fr 1fr; }
   .payslip-actions { flex-direction: column-reverse; }
   .payslip-actions .btn { width: 100%; }
   .row-actions { justify-content: flex-start; }
+  .detail-row { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .detail-value { text-align: left; }
+  .card { padding: 20px; }
 }
 
+/* ---------- Responsive: phones ---------- */
 @media (max-width: 520px) {
   .navbar nav a span { display: none; }
   .navbar nav a { width: 40px; height: 40px; justify-content: center; padding: 0; }
-  .page-head h1 { font-size: 1.8rem; }
-  .card { padding: 18px; }
+  .brand-subtitle { display: none; }
+  .page-head h1 { font-size: 1.6rem; }
+  .card { padding: 16px; }
+  .payslip { padding: 16px; }
   .payslip-meta { grid-template-columns: 1fr; }
   .net-pay { align-items: flex-start; flex-direction: column; }
   .net-value { align-self: flex-end; }
   .footer-inner { flex-wrap: wrap; }
+  .alert { padding: 11px 38px 11px 12px; font-size: .84rem; }
+  .stat-card { min-height: auto; padding: 16px; }
+  table { min-width: 720px; }
 }
