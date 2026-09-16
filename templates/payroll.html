@@ -37,17 +37,6 @@
     </div>
   </div>
 
-  {% if payroll.hikes_applied and payroll.hikes_applied > 0 %}
-  <div class="hike-note">
-    <i class="fa-solid fa-arrow-trend-up" aria-hidden="true"></i>
-    <span>
-      CTC reflects <strong>{{ payroll.hikes_applied }}</strong> automatic hike{{ '' if payroll.hikes_applied == 1 else 's' }}
-      of 3% (every 6 months since joining) — up from
-      <strong>{{ payroll.original_ctc | inr }}</strong> to <strong>{{ payroll.ctc | inr }}</strong> annually.
-    </span>
-  </div>
-  {% endif %}
-
   <!-- Employee bank & tax details -->
   <div class="detail-panel">
     <div class="detail-panel-heading">
@@ -82,23 +71,38 @@
   </div>
 
   <!-- Yearly taxable income breakup -->
-  <div class="detail-panel">
-    <div class="detail-panel-heading">
-      <i class="fa-solid fa-table-list" aria-hidden="true"></i> Yearly Taxable Income
-    </div>
-    <table class="breakdown-table">
-      <thead>
-        <tr><th>Description</th><th class="num">Amount (Annual)</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>Basic Salary</td><td class="num">{{ (payroll.basic * 12) | inr }}</td></tr>
-        <tr><td>HRA</td><td class="num">{{ (payroll.hra * 12) | inr }}</td></tr>
-        <tr><td>Special Allowance</td><td class="num">{{ (payroll.special_allowance * 12) | inr }}</td></tr>
-        <tr><td>Leave &amp; Travel Allowance</td><td class="num">{{ (payroll.lta * 12) | inr }}</td></tr>
-        <tr><td>Bonus</td><td class="num">{{ (payroll.bonus * 12) | inr }}</td></tr>
-      </tbody>
-    </table>
+<div class="detail-panel">
+  <div class="detail-panel-heading">
+    <i class="fa-solid fa-table-list" aria-hidden="true"></i> Yearly Taxable Income
   </div>
+
+  <div class="details-list">
+    <div class="detail-row">
+      <span class="detail-label">Basic Salary</span>
+      <span class="detail-value">{{ (payroll.basic * 12) | inr }}</span>
+    </div>
+
+    <div class="detail-row">
+      <span class="detail-label">HRA</span>
+      <span class="detail-value">{{ (payroll.hra * 12) | inr }}</span>
+    </div>
+
+    <div class="detail-row">
+      <span class="detail-label">Special Allowance</span>
+      <span class="detail-value">{{ (payroll.special_allowance * 12) | inr }}</span>
+    </div>
+
+    <div class="detail-row">
+      <span class="detail-label">Leave &amp; Travel Allowance</span>
+      <span class="detail-value">{{ (payroll.lta * 12) | inr }}</span>
+    </div>
+
+    <div class="detail-row">
+      <span class="detail-label">Bonus</span>
+      <span class="detail-value">{{ (payroll.bonus * 12) | inr }}</span>
+    </div>
+  </div>
+</div>
 
   <!-- Net taxable income -->
   <div class="detail-panel">
