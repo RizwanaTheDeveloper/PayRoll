@@ -1,7 +1,7 @@
 from datetime import datetime, date
 from flask import Flask, redirect, render_template, request, url_for, flash, abort, send_file
 from io import BytesIO
-import threading
+from concurrent.futures import ThreadPoolExecutor
 import atexit
 
 from employees import get_employees, get_employee, add_employee, update_employee, delete_employee
@@ -20,18 +20,24 @@ COMPANY_NAME = "5Gen Educon Private Limited"
 # REUSABLE PLAYWRIGHT BROWSER FOR PDF DOWNLOADS
 # ============================================================
 
+# Playwright's sync API is thread-pinned. Keep the entire Playwright
+# lifecycle on one permanent worker thread so Flask request threads
+# never touch the browser directly.
+_pdf_executor = ThreadPoolExecutor(
+    max_workers=1,
+    thread_name_prefix="pdf-worker",
+)
+
 _pdf_playwright = None
 _pdf_browser = None
-_pdf_lock = threading.Lock()
 
 
-def get_pdf_browser():
-    global _pdf_playwright
-    global _pdf_browser
+def _get_pdf_browser():
+    """Runs ONLY inside the _pdf_executor worker thread."""
+    global _pdf_playwright, _pdf_browser
 
     if _pdf_browser is None:
         _pdf_playwright = sync_playwright().start()
-
         _pdf_browser = _pdf_playwright.chromium.launch(
             headless=True
         )
@@ -39,10 +45,202 @@ def get_pdf_browser():
     return _pdf_browser
 
 
-@atexit.register
-def close_pdf_browser():
-    global _pdf_playwright
-    global _pdf_browser
+def _render_payslip_pdf(payslip_url):
+    """Render one payslip PDF entirely on the dedicated worker thread."""
+    browser = _get_pdf_browser()
+
+    page = browser.new_page(
+        viewport={"width": 1180, "height": 900},
+        device_scale_factor=1,
+    )
+
+    try:
+        page.goto(payslip_url, wait_until="networkidle")
+
+        page.evaluate(
+            """
+            async () => {
+                if (document.fonts) {
+                    await document.fonts.ready;
+                }
+            }
+            """
+        )
+
+        page.wait_for_timeout(200)
+
+        page.add_style_tag(
+            content="""
+            @page {
+                size: A4;
+                margin: 10mm;
+            }
+
+            html, body {
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #ffffff !important;
+            }
+
+            /* Chrome section headers/footers never belong in a payslip */
+            .navbar, .site-footer, .no-print {
+                display: none !important;
+            }
+
+            *, *::before, *::after {
+                animation: none !important;
+                transition: none !important;
+            }
+
+            .payslip {
+                width: 100% !important;
+                max-width: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                border: none !important;
+                box-shadow: none !important;
+                font-size: 11px !important;
+                line-height: 1.35 !important;
+            }
+
+            /* HEADER — real class is .payslip-head */
+            .payslip-head {
+                margin-bottom: 14px !important;
+                padding-bottom: 10px !important;
+            }
+
+            .payslip-head h1 {
+                font-size: 22px !important;
+                margin: 0 !important;
+            }
+
+            .payslip-head .muted.small {
+                font-size: 10px !important;
+                margin: 3px 0 !important;
+            }
+
+            /* EMPLOYEE META — real classes are .payslip-meta / .meta-item */
+            .payslip-meta {
+                gap: 10px !important;
+                margin-bottom: 12px !important;
+            }
+
+            .meta-item {
+                padding: 10px !important;
+            }
+
+            /* DETAIL PANELS */
+            .detail-panel {
+                margin-bottom: 12px !important;
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+            }
+
+            .detail-panel-heading {
+                padding-bottom: 9px !important;
+                font-size: 12px !important;
+            }
+
+            .details-list {
+                padding: 5px 0 !important;
+            }
+
+            .detail-row {
+                padding: 7px 0 !important;
+                min-height: 0 !important;
+            }
+
+            .detail-label {
+                font-size: 10px !important;
+            }
+
+            .detail-value {
+                font-size: 11px !important;
+            }
+
+            /* Page break before "Tax for FY" — real icon is fa-file-invoice */
+            .detail-panel:has(.detail-panel-heading .fa-file-invoice) {
+                break-before: page !important;
+                page-break-before: always !important;
+            }
+
+            /* SALARY SECTION */
+            .salary-grid {
+                gap: 12px !important;
+                margin-top: 12px !important;
+                margin-bottom: 12px !important;
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+            }
+
+            .salary-box {
+                padding: 12px !important;
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+            }
+
+            .salary-heading {
+                font-size: 11px !important;
+                margin-bottom: 8px !important;
+            }
+
+            .salary-line {
+                padding: 6px 0 !important;
+                font-size: 10px !important;
+            }
+
+            .salary-line strong {
+                font-size: 11px !important;
+            }
+
+            .salary-total {
+                font-size: 11px !important;
+            }
+
+            /* NET SALARY */
+            .net-pay {
+                padding: 13px 15px !important;
+                margin-top: 10px !important;
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+            }
+
+            .net-label {
+                font-size: 12px !important;
+            }
+
+            .net-pay small {
+                font-size: 10px !important;
+            }
+
+            .net-value {
+                font-size: 22px !important;
+            }
+            """
+        )
+
+        page.emulate_media(media="print")
+
+        return page.pdf(
+            format="A4",
+            print_background=True,
+            margin={
+                "top": "10mm",
+                "right": "10mm",
+                "bottom": "10mm",
+                "left": "10mm",
+            },
+            scale=0.90,
+            prefer_css_page_size=False,
+        )
+
+    finally:
+        page.close()
+
+
+def _shutdown_pdf_browser():
+    """Runs on the worker thread because it touches Playwright objects."""
+    global _pdf_playwright, _pdf_browser
 
     try:
         if _pdf_browser is not None:
@@ -57,6 +255,16 @@ def close_pdf_browser():
             _pdf_playwright = None
     except Exception:
         pass
+
+
+@atexit.register
+def close_pdf_browser():
+    try:
+        _pdf_executor.submit(_shutdown_pdf_browser).result(timeout=5)
+    except Exception:
+        pass
+
+    _pdf_executor.shutdown(wait=False)
 
 
 @app.context_processor
@@ -179,165 +387,24 @@ def generate_payroll(EmployeeCode):
 
 @app.route("/download-payslip/<EmployeeCode>")
 def download_payslip(EmployeeCode):
-
     employee = get_employee(EmployeeCode)
 
     if not employee:
         abort(404)
 
-    with _pdf_lock:
+    payslip_url = url_for(
+        "generate_payroll",
+        EmployeeCode=EmployeeCode,
+        pdf=1,
+        _external=True,
+    )
 
-        browser = get_pdf_browser()
-
-        page = browser.new_page(
-            viewport={"width": 1180, "height": 900},
-            device_scale_factor=1,
-        )
-
-        try:
-            payslip_url = url_for(
-                "generate_payroll",
-                EmployeeCode=EmployeeCode,
-                pdf=1,
-                _external=True,
-            )
-
-            page.goto(payslip_url, wait_until="networkidle")
-
-            page.evaluate(
-                """
-                async () => {
-                    if (document.fonts) {
-                        await document.fonts.ready;
-                    }
-                }
-                """
-            )
-
-            page.wait_for_timeout(200)
-
-            page.add_style_tag(
-                content="""
-
-                @page {
-                    size: A4;
-                    margin: 10mm;
-                }
-
-                html, body {
-                    margin: 0 !important;
-                    padding: 0 !important;
-                    background: #ffffff !important;
-                }
-
-                /* Chrome section headers/footers never belong in a payslip */
-                .navbar, .site-footer, .no-print {
-                    display: none !important;
-                }
-
-                *, *::before, *::after {
-                    animation: none !important;
-                    transition: none !important;
-                }
-
-                .payslip {
-                    width: 100% !important;
-                    max-width: none !important;
-                    margin: 0 !important;
-                    padding: 0 !important;
-                    border: none !important;
-                    box-shadow: none !important;
-                    font-size: 11px !important;
-                    line-height: 1.35 !important;
-                }
-
-                /* HEADER — real class is .payslip-head, not .payslip-header */
-                .payslip-head {
-                    margin-bottom: 14px !important;
-                    padding-bottom: 10px !important;
-                }
-                .payslip-head h1 {
-                    font-size: 22px !important;
-                    margin: 0 !important;
-                }
-                .payslip-head .muted.small {
-                    font-size: 10px !important;
-                    margin: 3px 0 !important;
-                }
-
-                /* EMPLOYEE META — real classes are .payslip-meta / .meta-item */
-                .payslip-meta {
-                    gap: 10px !important;
-                    margin-bottom: 12px !important;
-                }
-                .meta-item {
-                    padding: 10px !important;
-                }
-
-                /* DETAIL PANELS — these class names were already correct */
-                .detail-panel {
-                    margin-bottom: 12px !important;
-                    break-inside: avoid !important;
-                    page-break-inside: avoid !important;
-                }
-                .detail-panel-heading {
-                    padding-bottom: 9px !important;
-                    font-size: 12px !important;
-                }
-                .details-list { padding: 5px 0 !important; }
-                .detail-row { padding: 7px 0 !important; min-height: 0 !important; }
-                .detail-label { font-size: 10px !important; }
-                .detail-value { font-size: 11px !important; }
-
-                /* Page break before "Tax for FY" — real icon is fa-file-invoice */
-                .detail-panel:has(.detail-panel-heading .fa-file-invoice) {
-                    break-before: page !important;
-                    page-break-before: always !important;
-                }
-
-                /* SALARY SECTION — real classes: .salary-heading, .salary-line */
-                .salary-grid {
-                    gap: 12px !important;
-                    margin-top: 12px !important;
-                    margin-bottom: 12px !important;
-                    break-inside: avoid !important;
-                    page-break-inside: avoid !important;
-                }
-                .salary-box {
-                    padding: 12px !important;
-                    break-inside: avoid !important;
-                    page-break-inside: avoid !important;
-                }
-                .salary-heading { font-size: 11px !important; margin-bottom: 8px !important; }
-                .salary-line { padding: 6px 0 !important; font-size: 10px !important; }
-                .salary-line strong { font-size: 11px !important; }
-                .salary-total { font-size: 11px !important; }
-
-                /* NET SALARY — real classes: .net-label, .net-value, <small> */
-                .net-pay {
-                    padding: 13px 15px !important;
-                    margin-top: 10px !important;
-                    break-inside: avoid !important;
-                    page-break-inside: avoid !important;
-                }
-                .net-label { font-size: 12px !important; }
-                .net-pay small { font-size: 10px !important; }
-                .net-value { font-size: 22px !important; }
-                """
-            )
-
-            page.emulate_media(media="print")
-
-            pdf_bytes = page.pdf(
-                format="A4",
-                print_background=True,
-                margin={"top": "10mm", "right": "10mm", "bottom": "10mm", "left": "10mm"},
-                scale=0.90,
-                prefer_css_page_size=False,
-            )
-
-        finally:
-            page.close()
+    # The Flask request thread only waits for the result. Every Playwright
+    # operation itself executes on the dedicated worker thread.
+    pdf_bytes = _pdf_executor.submit(
+        _render_payslip_pdf,
+        payslip_url,
+    ).result()
 
     return send_file(
         BytesIO(pdf_bytes),
@@ -345,6 +412,7 @@ def download_payslip(EmployeeCode):
         as_attachment=True,
         download_name=f"Payslip-{EmployeeCode}.pdf",
     )
+
 
 @app.route("/add-employee", methods=["POST"])
 def add_employee_route():
