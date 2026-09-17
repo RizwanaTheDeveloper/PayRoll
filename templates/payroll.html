@@ -15,7 +15,6 @@
         <p class="muted small">Monthly salary statement</p>
       </div>
     </div>
-    <span class="badge"><i class="fa-solid fa-hashtag" aria-hidden="true"></i> {{ employee.EmployeeCode }}</span>
   </header>
 
   <div class="payslip-meta">
@@ -216,15 +215,24 @@
     <strong class="net-value">{{ payroll.net_salary | inr }}</strong>
   </div>
 
-  <div class="payslip-actions no-print">
-    <a href="{{ url_for('index') }}" class="btn btn-ghost">
-      <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
-      Back to Dashboard
-    </a>
-    <button type="button" onclick="window.print()" class="btn btn-primary">
-      <i class="fa-solid fa-print" aria-hidden="true"></i>
-      Print Payslip
-    </button>
-  </div>
+<div class="payslip-actions no-print">
+
+  <a href="{{ url_for('index') }}" class="btn btn-ghost">
+    <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+    Back to Dashboard
+  </a>
+
+  <button type="button" onclick="window.print()" class="btn btn-primary">
+    <i class="fa-solid fa-print" aria-hidden="true"></i>
+    Print Payslip
+  </button>
+
+  <a href="{{ url_for('download_payslip', EmployeeCode=employee.EmployeeCode) }}"
+     class="btn btn-primary">
+    <i class="fa-solid fa-download" aria-hidden="true"></i>
+    Download Payslip
+  </a>
+
+</div>
 </section>
 {% endblock %}

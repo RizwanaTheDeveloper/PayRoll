@@ -1,22 +1,67 @@
 from datetime import datetime, date
-from flask import Flask, redirect, render_template, request, url_for, flash, abort
+from flask import Flask, redirect, render_template, request, url_for, flash, abort, send_file
+from io import BytesIO
+import threading
+import atexit
 
 from employees import get_employees, get_employee, add_employee, update_employee, delete_employee
 from payroll import calculate_payroll, current_ist_str
 from tax_engine import calculate_annual_tax
 from payroll_history import get_month_record, record_month, get_fy_summary, fy_label
+from playwright.sync_api import sync_playwright
 
 app = Flask(__name__)
-app.secret_key = "change-this-to-a-random-secret-key"  # required for flash()
+app.secret_key = "justarandomsecretkey"
 
 COMPANY_NAME = "5Gen Educon Private Limited"
+
+
+# ============================================================
+# REUSABLE PLAYWRIGHT BROWSER FOR PDF DOWNLOADS
+# ============================================================
+
+_pdf_playwright = None
+_pdf_browser = None
+_pdf_lock = threading.Lock()
+
+
+def get_pdf_browser():
+    global _pdf_playwright
+    global _pdf_browser
+
+    if _pdf_browser is None:
+        _pdf_playwright = sync_playwright().start()
+
+        _pdf_browser = _pdf_playwright.chromium.launch(
+            headless=True
+        )
+
+    return _pdf_browser
+
+
+@atexit.register
+def close_pdf_browser():
+    global _pdf_playwright
+    global _pdf_browser
+
+    try:
+        if _pdf_browser is not None:
+            _pdf_browser.close()
+            _pdf_browser = None
+    except Exception:
+        pass
+
+    try:
+        if _pdf_playwright is not None:
+            _pdf_playwright.stop()
+            _pdf_playwright = None
+    except Exception:
+        pass
 
 
 @app.context_processor
 def inject_company_name():
     return {"company_name": COMPANY_NAME}
-
-
 @app.template_filter("inr")
 def inr_filter(value):
     """Format a number as Indian Rupees with Indian digit grouping (1,23,456.78)."""
@@ -131,6 +176,175 @@ def generate_payroll(EmployeeCode):
         executions_left=executions_left,
     )
 
+
+@app.route("/download-payslip/<EmployeeCode>")
+def download_payslip(EmployeeCode):
+
+    employee = get_employee(EmployeeCode)
+
+    if not employee:
+        abort(404)
+
+    with _pdf_lock:
+
+        browser = get_pdf_browser()
+
+        page = browser.new_page(
+            viewport={"width": 1180, "height": 900},
+            device_scale_factor=1,
+        )
+
+        try:
+            payslip_url = url_for(
+                "generate_payroll",
+                EmployeeCode=EmployeeCode,
+                pdf=1,
+                _external=True,
+            )
+
+            page.goto(payslip_url, wait_until="networkidle")
+
+            page.evaluate(
+                """
+                async () => {
+                    if (document.fonts) {
+                        await document.fonts.ready;
+                    }
+                }
+                """
+            )
+
+            page.wait_for_timeout(200)
+
+            page.add_style_tag(
+                content="""
+
+                @page {
+                    size: A4;
+                    margin: 10mm;
+                }
+
+                html, body {
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    background: #ffffff !important;
+                }
+
+                /* Chrome section headers/footers never belong in a payslip */
+                .navbar, .site-footer, .no-print {
+                    display: none !important;
+                }
+
+                *, *::before, *::after {
+                    animation: none !important;
+                    transition: none !important;
+                }
+
+                .payslip {
+                    width: 100% !important;
+                    max-width: none !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    border: none !important;
+                    box-shadow: none !important;
+                    font-size: 11px !important;
+                    line-height: 1.35 !important;
+                }
+
+                /* HEADER — real class is .payslip-head, not .payslip-header */
+                .payslip-head {
+                    margin-bottom: 14px !important;
+                    padding-bottom: 10px !important;
+                }
+                .payslip-head h1 {
+                    font-size: 22px !important;
+                    margin: 0 !important;
+                }
+                .payslip-head .muted.small {
+                    font-size: 10px !important;
+                    margin: 3px 0 !important;
+                }
+
+                /* EMPLOYEE META — real classes are .payslip-meta / .meta-item */
+                .payslip-meta {
+                    gap: 10px !important;
+                    margin-bottom: 12px !important;
+                }
+                .meta-item {
+                    padding: 10px !important;
+                }
+
+                /* DETAIL PANELS — these class names were already correct */
+                .detail-panel {
+                    margin-bottom: 12px !important;
+                    break-inside: avoid !important;
+                    page-break-inside: avoid !important;
+                }
+                .detail-panel-heading {
+                    padding-bottom: 9px !important;
+                    font-size: 12px !important;
+                }
+                .details-list { padding: 5px 0 !important; }
+                .detail-row { padding: 7px 0 !important; min-height: 0 !important; }
+                .detail-label { font-size: 10px !important; }
+                .detail-value { font-size: 11px !important; }
+
+                /* Page break before "Tax for FY" — real icon is fa-file-invoice */
+                .detail-panel:has(.detail-panel-heading .fa-file-invoice) {
+                    break-before: page !important;
+                    page-break-before: always !important;
+                }
+
+                /* SALARY SECTION — real classes: .salary-heading, .salary-line */
+                .salary-grid {
+                    gap: 12px !important;
+                    margin-top: 12px !important;
+                    margin-bottom: 12px !important;
+                    break-inside: avoid !important;
+                    page-break-inside: avoid !important;
+                }
+                .salary-box {
+                    padding: 12px !important;
+                    break-inside: avoid !important;
+                    page-break-inside: avoid !important;
+                }
+                .salary-heading { font-size: 11px !important; margin-bottom: 8px !important; }
+                .salary-line { padding: 6px 0 !important; font-size: 10px !important; }
+                .salary-line strong { font-size: 11px !important; }
+                .salary-total { font-size: 11px !important; }
+
+                /* NET SALARY — real classes: .net-label, .net-value, <small> */
+                .net-pay {
+                    padding: 13px 15px !important;
+                    margin-top: 10px !important;
+                    break-inside: avoid !important;
+                    page-break-inside: avoid !important;
+                }
+                .net-label { font-size: 12px !important; }
+                .net-pay small { font-size: 10px !important; }
+                .net-value { font-size: 22px !important; }
+                """
+            )
+
+            page.emulate_media(media="print")
+
+            pdf_bytes = page.pdf(
+                format="A4",
+                print_background=True,
+                margin={"top": "10mm", "right": "10mm", "bottom": "10mm", "left": "10mm"},
+                scale=0.90,
+                prefer_css_page_size=False,
+            )
+
+        finally:
+            page.close()
+
+    return send_file(
+        BytesIO(pdf_bytes),
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=f"Payslip-{EmployeeCode}.pdf",
+    )
 
 @app.route("/add-employee", methods=["POST"])
 def add_employee_route():

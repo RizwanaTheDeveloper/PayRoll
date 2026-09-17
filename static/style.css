@@ -1096,14 +1096,82 @@ tbody tr:last-child td { border-bottom: none; }
   body { background: #fff; }
   .navbar, .site-footer, .no-print { display: none !important; }
   .container { width: 100%; padding: 0; }
-  .payslip {
-    max-width: none;
-    margin: 0;
-    border: none;
-    box-shadow: none;
-    padding: 0;
+
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
   }
-  .salary-box, .meta-item, .detail-panel { break-inside: avoid; }
+
+  .payslip {
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    font-size: 11px !important;
+    line-height: 1.35 !important;
+  }
+
+  .payslip-head { margin-bottom: 14px !important; padding-bottom: 10px !important; }
+  .payslip-head h1 { font-size: 22px !important; margin: 0 !important; }
+  .payslip-head .muted.small { font-size: 10px !important; margin: 3px 0 !important; }
+
+  .payslip-meta {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    margin-bottom: 12px !important;
+  }
+  .meta-item { padding: 10px !important; }
+
+  .detail-panel {
+    margin-bottom: 12px !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+  .detail-panel-heading { padding-bottom: 9px !important; font-size: 12px !important; }
+  .details-list { padding: 5px 0 !important; }
+
+  .detail-row {
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 7px 0 !important;
+    min-height: 0 !important;
+  }
+  .detail-label { font-size: 10px !important; }
+  .detail-value { font-size: 11px !important; text-align: right !important; }
+
+  /* Keep the FY tax breakdown starting on its own page */
+  .detail-panel:has(.detail-panel-heading .fa-file-invoice) {
+    break-before: page !important;
+    page-break-before: always !important;
+  }
+
+  .salary-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+    margin: 12px 0 !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+  .salary-box { padding: 12px !important; break-inside: avoid !important; page-break-inside: avoid !important; }
+  .salary-heading { font-size: 11px !important; margin-bottom: 8px !important; }
+  .salary-line { padding: 6px 0 !important; font-size: 10px !important; }
+  .salary-line strong { font-size: 11px !important; }
+  .salary-total { font-size: 11px !important; }
+
+  .net-pay {
+    flex-wrap: nowrap !important;
+    padding: 13px 15px !important;
+    margin-top: 10px !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+  .net-label { font-size: 12px !important; }
+  .net-pay small { font-size: 10px !important; }
+  .net-value { font-size: 22px !important; align-self: auto !important; }
+
+  .salary-box, .meta-item { break-inside: avoid; }
 }
 
 /* ---------- Responsive: tablets ---------- */
