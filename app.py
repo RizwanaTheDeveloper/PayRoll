@@ -10,6 +10,7 @@ from tax_engine import calculate_annual_tax
 from payroll_history import get_month_record, record_month, get_fy_summary, fy_label
 from playwright.sync_api import sync_playwright
 
+
 app = Flask(__name__)
 app.secret_key = "justarandomsecretkey"
 
