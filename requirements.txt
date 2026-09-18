@@ -1,2 +1,5 @@
 Flask
-pyodbc
+gunicorn
+playwright
+pymongo
+python-dotenv
