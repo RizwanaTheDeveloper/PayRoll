@@ -1,12 +1,13 @@
-import pyodbc
+import mssql_python
 
 
 def get_connection():
-    connection = pyodbc.connect(
-        "DRIVER={ODBC Driver 18 for SQL Server};"
-        "SERVER=.\\SQLEXPRESS;"
-        "DATABASE=PayrollDB;"
+
+    connection = mssql_python.connect(
+        "Server=.\\SQLEXPRESS;"
+        "Database=PayrollDB;"
         "Trusted_Connection=yes;"
         "TrustServerCertificate=yes;"
     )
+
     return connection
