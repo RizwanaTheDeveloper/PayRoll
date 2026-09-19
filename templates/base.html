@@ -65,7 +65,17 @@
     </footer>
   </div>
 
-  <script>
+  <script>// Instantly collapse the panel the moment a valid Save Employee
+// submission happens, so there's no visible delay waiting for the
+// page to reload and re-render it closed.
+const addEmployeeForm = document.querySelector('#add-employee form');
+if (addEmployeeForm && addEmployeeCard) {
+  addEmployeeForm.addEventListener('submit', () => {
+    if (addEmployeeForm.checkValidity()) {
+      addEmployeeCard.classList.add('is-collapsed');
+    }
+  });
+}
     document.addEventListener('DOMContentLoaded', () => {
       // Presentation-only enhancement: preserve all existing form/backend behavior.
       document.querySelectorAll('.form-control').forEach((input) => {

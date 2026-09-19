@@ -9,6 +9,12 @@
         <h1>Payroll Dashboard</h1>
         <p class="muted lead">Manage your team and generate payslips in one click.</p>
       </div>
+      <div class="page-head-action">
+        <button type="button" id="toggle-add-employee" class="btn btn-primary">
+          <i class="fa-solid fa-user-plus" aria-hidden="true"></i>
+          <span>Add Employee</span>
+        </button>
+      </div>
     </div>
   </section>
 
@@ -44,14 +50,19 @@
     </div>
   </section>
 
-  <!-- Add employee form -->
-  <section class="card form-card" id="add-employee">
+  <!-- Add employee form: hidden by default, opened via the header button
+       or automatically if a validation error redirected back here with
+       ?show_add=1 -->
+  <section class="card form-card{{ '' if request.args.get('show_add') else ' is-collapsed' }}" id="add-employee">
     <div class="section-heading">
       <div class="section-icon"><i class="fa-solid fa-user-plus" aria-hidden="true"></i></div>
       <div>
         <h2>Add Employee</h2>
         <p class="muted small">Enter the new team member's details.</p>
       </div>
+      <button type="button" class="form-card-close" id="close-add-employee" aria-label="Close">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
     </div>
 
     <form action="{{ url_for('add_employee_route') }}" method="POST" class="form-grid" novalidate>
@@ -202,8 +213,10 @@
       <div class="empty-state">
         <div class="empty-icon"><i class="fa-solid fa-users-slash" aria-hidden="true"></i></div>
         <h3>No employees yet</h3>
-        <p class="muted">Use the form above to add your first employee.</p>
-        <a href="#add-employee" class="btn btn-ghost"><i class="fa-solid fa-user-plus" aria-hidden="true"></i> Add first employee</a>
+        <p class="muted">Click "Add Employee" above to add your first employee.</p>
+        <button type="button" id="empty-state-add-employee" class="btn btn-ghost" onclick="document.getElementById('toggle-add-employee').click();">
+          <i class="fa-solid fa-user-plus" aria-hidden="true"></i> Add first employee
+        </button>
       </div>
     {% endif %}
   </section>
