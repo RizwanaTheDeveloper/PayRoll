@@ -3,6 +3,10 @@ from datetime import date
 from database import get_connection
 
 
+# ============================================================
+# FINANCIAL YEAR
+# ============================================================
+
 def financial_year_bounds(reference_date=None):
     """Indian financial year: 1 April to 31 March."""
 
@@ -23,6 +27,10 @@ def fy_label(reference_date=None):
 
     return f"{start.year} - {end.year}"
 
+
+# ============================================================
+# GET MONTH RECORD
+# ============================================================
 
 def get_month_record(employee_code, month, year):
     """
@@ -48,12 +56,19 @@ def get_month_record(employee_code, month, year):
 
         row = cursor.fetchone()
 
-        return float(row.MonthlyTDS) if row else None
+        if row:
+            return float(row.MonthlyTDS)
+
+        return None
 
     finally:
         cursor.close()
         connection.close()
 
+
+# ============================================================
+# RECORD MONTH
+# ============================================================
 
 def record_month(employee_code, month, year, monthly_tds):
     connection = get_connection()
@@ -62,19 +77,19 @@ def record_month(employee_code, month, year, monthly_tds):
     try:
         cursor.execute("""
             INSERT INTO PayrollHistory
-                (
-                    EmployeeCode,
-                    PayMonth,
-                    PayYear,
-                    MonthlyTDS
-                )
+            (
+                EmployeeCode,
+                PayMonth,
+                PayYear,
+                MonthlyTDS
+            )
             VALUES
-                (
-                    %s,
-                    %s,
-                    %s,
-                    %s
-                )
+            (
+                %s,
+                %s,
+                %s,
+                %s
+            )
         """, (
             employee_code,
             month,
@@ -93,6 +108,10 @@ def record_month(employee_code, month, year, monthly_tds):
         connection.close()
 
 
+# ============================================================
+# FINANCIAL YEAR SUMMARY
+# ============================================================
+
 def get_fy_summary(employee_code, reference_date=None):
     """
     Returns:
@@ -103,8 +122,7 @@ def get_fy_summary(employee_code, reference_date=None):
             executions_left
         )
 
-    for the financial year containing reference_date,
-    based on rows already recorded in PayrollHistory.
+    for the financial year containing reference_date.
     """
 
     start, end = financial_year_bounds(reference_date)

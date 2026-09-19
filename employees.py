@@ -1,9 +1,8 @@
 from database import get_connection
 
 
-# Keep the exact attribute names expected by app.py and payroll.py.
-# The quoted aliases are important because PostgreSQL normally
-# converts unquoted column names to lowercase.
+# These aliases preserve the exact attribute names expected by app.py
+# and payroll.py, such as employee.FullName and employee.CTC.
 EMPLOYEE_COLUMNS = """
     EmployeeCode AS "EmployeeCode",
     FullName AS "FullName",
@@ -20,6 +19,10 @@ EMPLOYEE_COLUMNS = """
 """
 
 
+# ============================================================
+# READ - GET ALL EMPLOYEES
+# ============================================================
+
 def get_employees():
     connection = get_connection()
     cursor = connection.cursor()
@@ -32,13 +35,16 @@ def get_employees():
             ORDER BY EmployeeCode
         """)
 
-        employees = cursor.fetchall()
-        return employees
+        return cursor.fetchall()
 
     finally:
         cursor.close()
         connection.close()
 
+
+# ============================================================
+# READ - GET ONE EMPLOYEE
+# ============================================================
 
 def get_employee(employee_code):
     connection = get_connection()
@@ -51,13 +57,16 @@ def get_employee(employee_code):
             WHERE EmployeeCode = %s
         """, (employee_code,))
 
-        employee = cursor.fetchone()
-        return employee
+        return cursor.fetchone()
 
     finally:
         cursor.close()
         connection.close()
 
+
+# ============================================================
+# CREATE - ADD EMPLOYEE
+# ============================================================
 
 def add_employee(
     full_name,
@@ -75,18 +84,20 @@ def add_employee(
     cursor = connection.cursor()
 
     try:
-        # PostgreSQL equivalent of the old SQL Server TRY_CAST.
+        # Find the highest existing employee number.
         #
-        # Example:
         # EMP001 -> 1
+        # EMP002 -> 2
         # EMP010 -> 10
         #
-        # NULLIF prevents an empty value from being cast to INTEGER.
+        # PostgreSQL version of the old SQL Server TRY_CAST.
         cursor.execute("""
             SELECT MAX(
                 CAST(
-                    NULLIF(REPLACE(EmployeeCode, 'EMP', ''), '')
-                    AS INTEGER
+                    NULLIF(
+                        REPLACE(EmployeeCode, 'EMP', ''),
+                        ''
+                    ) AS INTEGER
                 )
             )
             FROM Employees
@@ -95,41 +106,44 @@ def add_employee(
         result = cursor.fetchone()
         last_number = result[0]
 
-        next_number = 1 if last_number is None else last_number + 1
+        if last_number is None:
+            next_number = 1
+        else:
+            next_number = last_number + 1
 
         employee_code = f"EMP{next_number:03d}"
 
         cursor.execute("""
             INSERT INTO Employees
-                (
-                    EmployeeCode,
-                    FullName,
-                    Department,
-                    Designation,
-                    JoiningDate,
-                    CTC,
-                    PAN,
-                    PFUAN,
-                    AccountNumber,
-                    IFSCCode,
-                    RegimeOpted,
-                    IsActive
-                )
+            (
+                EmployeeCode,
+                FullName,
+                Department,
+                Designation,
+                JoiningDate,
+                CTC,
+                PAN,
+                PFUAN,
+                AccountNumber,
+                IFSCCode,
+                RegimeOpted,
+                IsActive
+            )
             VALUES
-                (
-                    %s,
-                    %s,
-                    %s,
-                    %s,
-                    %s,
-                    %s,
-                    %s,
-                    %s,
-                    %s,
-                    %s,
-                    %s,
-                    %s
-                )
+            (
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                %s
+            )
         """, (
             employee_code,
             full_name,
@@ -157,6 +171,10 @@ def add_employee(
         cursor.close()
         connection.close()
 
+
+# ============================================================
+# UPDATE - EDIT EMPLOYEE
+# ============================================================
 
 def update_employee(
     employee_code,
@@ -205,8 +223,7 @@ def update_employee(
 
         connection.commit()
 
-        updated = cursor.rowcount > 0
-        return updated
+        return cursor.rowcount > 0
 
     except Exception:
         connection.rollback()
@@ -216,6 +233,10 @@ def update_employee(
         cursor.close()
         connection.close()
 
+
+# ============================================================
+# DELETE - DELETE EMPLOYEE
+# ============================================================
 
 def delete_employee(employee_code):
     connection = get_connection()
@@ -229,8 +250,7 @@ def delete_employee(employee_code):
 
         connection.commit()
 
-        deleted = cursor.rowcount > 0
-        return deleted
+        return cursor.rowcount > 0
 
     except Exception:
         connection.rollback()
