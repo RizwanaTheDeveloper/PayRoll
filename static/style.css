@@ -1218,3 +1218,23 @@ tbody tr:last-child td { border-bottom: none; }
   .stat-card { min-height: auto; padding: 16px; }
   table { min-width: 720px; }
 }
+.form-card.is-collapsed { display: none; }
+
+.page-head-action { flex-shrink: 0; }
+
+.form-card-close {
+  margin-left: auto;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease;
+  flex: 0 0 auto;
+}
+.form-card-close:hover { background: #f1f5f9; color: var(--ink); }

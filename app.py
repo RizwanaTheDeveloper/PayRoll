@@ -420,7 +420,7 @@ def add_employee_route():
     data, error = _parse_employee_form(request.form)
     if error:
         flash(error, "error")
-        return redirect(url_for("index"))
+        return redirect(url_for("index", show_add=1)) 
 
     add_employee(
         data["full_name"], data["department"], data["designation"],

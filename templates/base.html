@@ -103,6 +103,41 @@
           });
         }
       });
+
+      // Add Employee panel: collapsed by default, toggled from the
+      // dashboard header button, closable via its own × button, and
+      // reopened automatically if the server sent back a validation error.
+      const addEmployeeCard = document.getElementById('add-employee');
+      const toggleAddBtn = document.getElementById('toggle-add-employee');
+      const closeAddBtn = document.getElementById('close-add-employee');
+
+      if (addEmployeeCard && toggleAddBtn) {
+        const toggleLabel = toggleAddBtn.querySelector('span');
+
+        const openPanel = () => {
+          addEmployeeCard.classList.remove('is-collapsed');
+          if (toggleLabel) toggleLabel.textContent = 'Close Form';
+          addEmployeeCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+        const closePanel = () => {
+          addEmployeeCard.classList.add('is-collapsed');
+          if (toggleLabel) toggleLabel.textContent = 'Add Employee';
+        };
+
+        toggleAddBtn.addEventListener('click', () => {
+          addEmployeeCard.classList.contains('is-collapsed') ? openPanel() : closePanel();
+        });
+
+        if (closeAddBtn) {
+          closeAddBtn.addEventListener('click', closePanel);
+        }
+
+        // If the server rendered the panel already open (a validation
+        // error redirect with ?show_add=1), keep the button label in sync.
+        if (!addEmployeeCard.classList.contains('is-collapsed') && toggleLabel) {
+          toggleLabel.textContent = 'Close Form';
+        }
+      }
     });
   </script>
 </body>

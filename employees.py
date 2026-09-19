@@ -1,8 +1,19 @@
 from database import get_connection
 
 
-# These aliases preserve the exact attribute names expected by app.py
-# and payroll.py, such as employee.FullName and employee.CTC.
+# ============================================================
+# EMPLOYEE COLUMNS
+# ============================================================
+
+# The quoted aliases preserve the exact names expected by
+# the rest of the Flask application:
+#
+# employee.EmployeeCode
+# employee.FullName
+# employee.CTC
+# employee.RegimeOpted
+# etc.
+
 EMPLOYEE_COLUMNS = """
     EmployeeCode AS "EmployeeCode",
     FullName AS "FullName",
@@ -20,52 +31,66 @@ EMPLOYEE_COLUMNS = """
 
 
 # ============================================================
-# READ - GET ALL EMPLOYEES
+# READ ALL EMPLOYEES
 # ============================================================
 
 def get_employees():
+
     connection = get_connection()
     cursor = connection.cursor()
 
     try:
+
         cursor.execute(f"""
-            SELECT {EMPLOYEE_COLUMNS}
+            SELECT
+                {EMPLOYEE_COLUMNS}
             FROM Employees
             WHERE IsActive = 1
             ORDER BY EmployeeCode
         """)
 
-        return cursor.fetchall()
+        employees = cursor.fetchall()
+
+        return employees
 
     finally:
+
         cursor.close()
         connection.close()
 
 
 # ============================================================
-# READ - GET ONE EMPLOYEE
+# READ ONE EMPLOYEE
 # ============================================================
 
 def get_employee(employee_code):
+
     connection = get_connection()
     cursor = connection.cursor()
 
     try:
+
         cursor.execute(f"""
-            SELECT {EMPLOYEE_COLUMNS}
+            SELECT
+                {EMPLOYEE_COLUMNS}
             FROM Employees
             WHERE EmployeeCode = %s
-        """, (employee_code,))
+        """, (
+            employee_code,
+        ))
 
-        return cursor.fetchone()
+        employee = cursor.fetchone()
+
+        return employee
 
     finally:
+
         cursor.close()
         connection.close()
 
 
 # ============================================================
-# CREATE - ADD EMPLOYEE
+# CREATE EMPLOYEE
 # ============================================================
 
 def add_employee(
@@ -80,17 +105,20 @@ def add_employee(
     ifsc_code,
     regime_opted
 ):
+
     connection = get_connection()
     cursor = connection.cursor()
 
     try:
-        # Find the highest existing employee number.
+
+        # ----------------------------------------------------
+        # Find the last employee number
         #
         # EMP001 -> 1
         # EMP002 -> 2
         # EMP010 -> 10
-        #
-        # PostgreSQL version of the old SQL Server TRY_CAST.
+        # ----------------------------------------------------
+
         cursor.execute("""
             SELECT MAX(
                 CAST(
@@ -104,6 +132,7 @@ def add_employee(
         """)
 
         result = cursor.fetchone()
+
         last_number = result[0]
 
         if last_number is None:
@@ -112,6 +141,11 @@ def add_employee(
             next_number = last_number + 1
 
         employee_code = f"EMP{next_number:03d}"
+
+
+        # ----------------------------------------------------
+        # Insert employee
+        # ----------------------------------------------------
 
         cursor.execute("""
             INSERT INTO Employees
@@ -159,21 +193,31 @@ def add_employee(
             1
         ))
 
+
+        # ----------------------------------------------------
+        # Save transaction
+        # ----------------------------------------------------
+
         connection.commit()
 
         return employee_code
 
+
     except Exception:
+
         connection.rollback()
+
         raise
 
+
     finally:
+
         cursor.close()
         connection.close()
 
 
 # ============================================================
-# UPDATE - EDIT EMPLOYEE
+# UPDATE EMPLOYEE
 # ============================================================
 
 def update_employee(
@@ -189,10 +233,12 @@ def update_employee(
     ifsc_code,
     regime_opted
 ):
+
     connection = get_connection()
     cursor = connection.cursor()
 
     try:
+
         cursor.execute("""
             UPDATE Employees
             SET
@@ -221,41 +267,57 @@ def update_employee(
             employee_code
         ))
 
+
         connection.commit()
 
         return cursor.rowcount > 0
 
+
     except Exception:
+
         connection.rollback()
+
         raise
 
+
     finally:
+
         cursor.close()
         connection.close()
 
 
 # ============================================================
-# DELETE - DELETE EMPLOYEE
+# DELETE EMPLOYEE
 # ============================================================
 
 def delete_employee(employee_code):
+
     connection = get_connection()
     cursor = connection.cursor()
 
     try:
+
         cursor.execute("""
             DELETE FROM Employees
             WHERE EmployeeCode = %s
-        """, (employee_code,))
+        """, (
+            employee_code,
+        ))
+
 
         connection.commit()
 
         return cursor.rowcount > 0
 
+
     except Exception:
+
         connection.rollback()
+
         raise
 
+
     finally:
+
         cursor.close()
         connection.close()
