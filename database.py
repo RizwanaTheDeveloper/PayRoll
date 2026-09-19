@@ -1,13 +1,5 @@
-import mssql_python
-
+import os
+import psycopg
 
 def get_connection():
-
-    connection = mssql_python.connect(
-        "Server=.\\SQLEXPRESS;"
-        "Database=PayrollDB;"
-        "Trusted_Connection=yes;"
-        "TrustServerCertificate=yes;"
-    )
-
-    return connection
+    return psycopg.connect(os.getenv("DATABASE_URL"))

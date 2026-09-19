@@ -3,5 +3,4 @@ gunicorn
 playwright
 pymongo
 python-dotenv
-mssql-python
-pyodbc
+psycopg[binary]
