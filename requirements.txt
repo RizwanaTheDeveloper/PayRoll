@@ -4,4 +4,4 @@ playwright
 pymongo
 python-dotenv
 mssql-python
-mssql_python
+pyodbc
