@@ -447,7 +447,7 @@ def generate_payroll(EmployeeCode):
     today = date.today()
     month, year = today.month, today.year
 
-    annual_gross = payroll["gross_earnings"] * 12
+    annual_gross = payroll["gross_earnings_full"] * 12
     regime = getattr(employee, "RegimeOpted", None) or "New"
     tax = calculate_annual_tax(annual_gross, regime)
 
@@ -501,7 +501,7 @@ def download_payslip(EmployeeCode):
     # Hand the current Flask session cookie to the headless browser so it
     # renders the payslip as the logged-in user instead of as a guest
     # (who would just get redirected to /login).
-    cookie_name = app.config["SESSION_COOKIE_NAME"]
+    cookie_name = app.session_cookie_name
     cookie_value = request.cookies.get(cookie_name)
 
     auth_cookie = None

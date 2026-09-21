@@ -82,27 +82,27 @@
   <div class="details-list">
     <div class="detail-row">
       <span class="detail-label">Basic Salary</span>
-      <span class="detail-value">{{ (payroll.basic * 12) | inr }}</span>
+      <span class="detail-value">{{ (payroll.basic_full * 12) | inr }}</span>
     </div>
 
     <div class="detail-row">
       <span class="detail-label">HRA</span>
-      <span class="detail-value">{{ (payroll.hra * 12) | inr }}</span>
+      <span class="detail-value">{{ (payroll.hra_full * 12) | inr }}</span>
     </div>
 
     <div class="detail-row">
       <span class="detail-label">Special Allowance</span>
-      <span class="detail-value">{{ (payroll.special_allowance * 12) | inr }}</span>
+      <span class="detail-value">{{ (payroll.special_allowance_full * 12) | inr }}</span>
     </div>
 
     <div class="detail-row">
       <span class="detail-label">Leave &amp; Travel Allowance</span>
-      <span class="detail-value">{{ (payroll.lta * 12) | inr }}</span>
+      <span class="detail-value">{{ (payroll.lta_full * 12) | inr }}</span>
     </div>
 
     <div class="detail-row">
       <span class="detail-label">Bonus</span>
-      <span class="detail-value">{{ (payroll.bonus * 12) | inr }}</span>
+      <span class="detail-value">{{ (payroll.bonus_full * 12) | inr }}</span>
     </div>
   </div>
 </div>
@@ -185,6 +185,12 @@
         <div class="salary-heading"><span class="box-icon"><i class="fa-solid fa-arrow-trend-up" aria-hidden="true"></i></span> Earnings (Monthly)</div>
         <span class="box-pill positive">Credit</span>
       </div>
+      {% if payroll.proration_factor < 1 %}
+      <div class="proration-note">
+        <i class="fa-regular fa-calendar-days" aria-hidden="true"></i>
+        Prorated for {{ payroll.working_days }} of {{ payroll.days_in_month }} working days this month
+      </div>
+      {% endif %}
       <div class="salary-line"><span>Basic Salary</span><strong>{{ payroll.basic | inr }}</strong></div>
       <div class="salary-line"><span>House Rent Allowance</span><strong>{{ payroll.hra | inr }}</strong></div>
       <div class="salary-line"><span>Special Allowance</span><strong>{{ payroll.special_allowance | inr }}</strong></div>

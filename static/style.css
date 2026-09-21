@@ -1136,6 +1136,20 @@ tbody tr:last-child td { border-bottom: none; }
   flex-wrap: wrap;
 }
 
+.proration-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: -2px 0 10px;
+  padding: 8px 10px;
+  border-radius: 9px;
+  background: var(--amber-50);
+  color: var(--amber);
+  font-size: .74rem;
+  font-weight: 700;
+}
+.proration-note i { font-size: .8rem; }
+
 .salary-heading {
   display: flex;
   align-items: center;
