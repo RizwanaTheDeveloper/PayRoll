@@ -188,7 +188,7 @@ def add_employee(
             account_number,
             ifsc_code,
             regime_opted,
-            True
+            1
         ))
 
 
