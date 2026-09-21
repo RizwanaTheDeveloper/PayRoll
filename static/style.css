@@ -818,6 +818,57 @@ tbody tr:last-child td { border-bottom: none; }
 }
 
 .designation { color: #64748b; }
+
+/* =========================================================
+   CLIENT PROFILE VIEW (non-admin dashboard)
+========================================================== */
+
+.client-profile-wrap {
+  max-width: 560px;
+  margin: 40px auto 0;
+}
+
+.client-profile-card { padding: 32px; }
+
+.client-profile-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 20px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+}
+
+.client-profile-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  font-size: 1.3rem;
+}
+
+.client-profile-name {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--ink);
+  margin: 0 0 2px;
+}
+
+.client-profile-details { padding: 6px 0 4px; }
+
+.client-profile-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 22px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 560px) {
+  .client-profile-wrap { margin-top: 20px; }
+  .client-profile-card { padding: 22px; }
+  .client-profile-actions { flex-direction: column; }
+  .client-profile-actions .btn { width: 100%; justify-content: center; }
+}
 .salary-cell { color: var(--ink); font-weight: 800; white-space: nowrap; }
 
 .btn-sm {

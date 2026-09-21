@@ -1,4 +1,5 @@
 from datetime import datetime, date
+from urllib.parse import urlparse
 from flask import Flask, redirect, render_template, request, url_for, flash, abort, send_file, session
 from io import BytesIO
 from concurrent.futures import ThreadPoolExecutor
@@ -47,17 +48,37 @@ def _get_pdf_browser():
     return _pdf_browser
 
 
-def _render_payslip_pdf(payslip_url):
-    """Render one payslip PDF entirely on the dedicated worker thread."""
+def _render_payslip_pdf(payslip_url, auth_cookie):
+    """Render one payslip PDF entirely on the dedicated worker thread.
+
+    auth_cookie: dict with the Flask session cookie (name/value/domain/path)
+    so the headless browser is authenticated as the requesting user.
+    Without this, Playwright hits the login-protected payslip route as an
+    anonymous visitor and gets redirected to /login, producing a PDF of
+    the login page instead of the payslip.
+    """
     browser = _get_pdf_browser()
 
-    page = browser.new_page(
+    context = browser.new_context(
         viewport={"width": 1180, "height": 900},
         device_scale_factor=1,
     )
 
+    if auth_cookie:
+        context.add_cookies([auth_cookie])
+
+    page = context.new_page()
+
     try:
         page.goto(payslip_url, wait_until="networkidle")
+
+        # If the cookie didn't authenticate us for any reason, fail loudly
+        # instead of silently returning a PDF of the login screen.
+        if "/login" in page.url:
+            raise RuntimeError(
+                "Payslip PDF render was redirected to the login page "
+                "(session cookie was missing or invalid)."
+            )
 
         page.evaluate(
             """
@@ -238,6 +259,7 @@ def _render_payslip_pdf(payslip_url):
 
     finally:
         page.close()
+        context.close()
 
 
 def _shutdown_pdf_browser():
@@ -476,11 +498,28 @@ def download_payslip(EmployeeCode):
         _external=True,
     )
 
+    # Hand the current Flask session cookie to the headless browser so it
+    # renders the payslip as the logged-in user instead of as a guest
+    # (who would just get redirected to /login).
+    cookie_name = app.config["SESSION_COOKIE_NAME"]
+    cookie_value = request.cookies.get(cookie_name)
+
+    auth_cookie = None
+    if cookie_value:
+        parsed_url = urlparse(payslip_url)
+        auth_cookie = {
+            "name": cookie_name,
+            "value": cookie_value,
+            "domain": parsed_url.hostname,
+            "path": "/",
+        }
+
     # The Flask request thread only waits for the result. Every Playwright
     # operation itself executes on the dedicated worker thread.
     pdf_bytes = _pdf_executor.submit(
         _render_payslip_pdf,
         payslip_url,
+        auth_cookie,
     ).result()
 
     return send_file(
