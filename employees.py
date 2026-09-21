@@ -111,41 +111,39 @@ def add_employee(
 
     try:
 
-        # ----------------------------------------------------
-        # Find the last employee number
-        #
-        # EMP001 -> 1
-        # EMP002 -> 2
-        # EMP010 -> 10
-        # ----------------------------------------------------
+        # ========================================================
+        # FIND NEXT EMPLOYEE NUMBER
+        # ========================================================
 
         cursor.execute("""
-            SELECT MAX(
-                CAST(
-                    NULLIF(
-                        REPLACE(EmployeeCode, 'EMP', ''),
-                        ''
-                    ) AS INTEGER
-                )
+            SELECT COALESCE(
+                MAX(
+                    CASE
+                        WHEN EmployeeCode ~ '^EMP[0-9]+$'
+                        THEN CAST(
+                            SUBSTRING(EmployeeCode FROM 4)
+                            AS INTEGER
+                        )
+                        ELSE NULL
+                    END
+                ),
+                0
             )
             FROM Employees
         """)
 
         result = cursor.fetchone()
 
-        last_number = result[0]
+        last_number = result[0] if result else 0
 
-        if last_number is None:
-            next_number = 1
-        else:
-            next_number = last_number + 1
+        next_number = last_number + 1
 
         employee_code = f"EMP{next_number:03d}"
 
 
-        # ----------------------------------------------------
-        # Insert employee
-        # ----------------------------------------------------
+        # ========================================================
+        # INSERT EMPLOYEE
+        # ========================================================
 
         cursor.execute("""
             INSERT INTO Employees
@@ -190,13 +188,13 @@ def add_employee(
             account_number,
             ifsc_code,
             regime_opted,
-            1
+            True
         ))
 
 
-        # ----------------------------------------------------
-        # Save transaction
-        # ----------------------------------------------------
+        # ========================================================
+        # COMMIT
+        # ========================================================
 
         connection.commit()
 
@@ -214,6 +212,7 @@ def add_employee(
 
         cursor.close()
         connection.close()
+
 
 
 # ============================================================
