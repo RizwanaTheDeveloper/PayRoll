@@ -1,5 +1,5 @@
 from datetime import datetime, date
-from flask import Flask, redirect, render_template, request, url_for, flash, abort, send_file
+from flask import Flask, redirect, render_template, request, url_for, flash, abort, send_file, session
 from io import BytesIO
 from concurrent.futures import ThreadPoolExecutor
 import atexit
@@ -8,6 +8,7 @@ from employees import get_employees, get_employee, add_employee, update_employee
 from payroll import calculate_payroll, current_ist_str
 from tax_engine import calculate_annual_tax
 from payroll_history import get_month_record, record_month, get_fy_summary, fy_label
+from auth import verify_login, login_required, role_required
 from playwright.sync_api import sync_playwright
 
 
@@ -301,9 +302,10 @@ def _parse_employee_form(form):
     account_number = (form.get("account_number") or "").strip()
     ifsc_code = (form.get("ifsc_code") or "").strip().upper()
     regime_opted = (form.get("regime_opted") or "New").strip()
+    working_days_raw = (form.get("working_days") or "").strip()
 
-    if not full_name or not ctc_raw or not joining_date_raw:
-        return None, "Full Name, Joining Date, and CTC are required."
+    if not full_name or not ctc_raw or not joining_date_raw or not working_days_raw:
+        return None, "Full Name, Joining Date, CTC, and Working Days are required."
 
     try:
         ctc = float(ctc_raw)
@@ -317,6 +319,14 @@ def _parse_employee_form(form):
         joining_date = datetime.strptime(joining_date_raw, "%Y-%m-%d").date()
     except ValueError:
         return None, "Joining Date must be a valid date (YYYY-MM-DD)."
+
+    try:
+        working_days = int(working_days_raw)
+    except ValueError:
+        return None, "Working Days must be a whole number."
+
+    if working_days < 0 or working_days > 31:
+        return None, "Working Days must be between 0 and 31."
 
     if regime_opted not in ("New", "Old"):
         regime_opted = "New"
@@ -332,17 +342,79 @@ def _parse_employee_form(form):
         "account_number": account_number or None,
         "ifsc_code": ifsc_code or None,
         "regime_opted": regime_opted,
+        "working_days": working_days,
     }, None
 
 
+# ============================================================
+# AUTH
+# ============================================================
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = (request.form.get("username") or "").strip()
+        password = request.form.get("password") or ""
+
+        user = verify_login(username, password)
+
+        if not user:
+            flash("Invalid username or password.", "error")
+            return redirect(url_for("login"))
+
+        session.clear()
+        session["user_id"] = user.UserId
+        session["username"] = user.Username
+        session["role"] = user.Role
+        session["employee_code"] = user.EmployeeCode
+
+        flash(f"Welcome back, {user.Username}.", "success")
+        next_url = request.args.get("next") or url_for("index")
+        return redirect(next_url)
+
+    return render_template("login.html")
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    flash("You've been signed out.", "success")
+    return redirect(url_for("login"))
+
+
+# ============================================================
+# DASHBOARD
+# ============================================================
+
 @app.route("/")
+@login_required
 def index():
-    employees = get_employees()
+    if session.get("role") == "client" and session.get("employee_code"):
+        # This client account is restricted to a single employee record.
+        employee = get_employee(session["employee_code"])
+        employees = [employee] if employee else []
+    else:
+        # Admins, and "shared" client accounts with no EmployeeCode,
+        # see every active employee.
+        employees = get_employees()
+
     return render_template("index.html", employees=employees)
 
 
+def _client_can_view(employee_code):
+    """True unless this session is a client restricted to a different employee."""
+    if session.get("role") != "client":
+        return True
+    restricted_to = session.get("employee_code")
+    return not restricted_to or restricted_to == employee_code
+
+
 @app.route("/generate-payroll/<EmployeeCode>")
+@login_required
 def generate_payroll(EmployeeCode):
+    if not _client_can_view(EmployeeCode):
+        abort(403)
+
     employee = get_employee(EmployeeCode)
     if not employee:
         abort(404)
@@ -387,7 +459,11 @@ def generate_payroll(EmployeeCode):
 
 
 @app.route("/download-payslip/<EmployeeCode>")
+@login_required
 def download_payslip(EmployeeCode):
+    if not _client_can_view(EmployeeCode):
+        abort(403)
+
     employee = get_employee(EmployeeCode)
 
     if not employee:
@@ -415,23 +491,30 @@ def download_payslip(EmployeeCode):
     )
 
 
+# ============================================================
+# ADMIN-ONLY: EMPLOYEE MANAGEMENT
+# ============================================================
+
 @app.route("/add-employee", methods=["POST"])
+@role_required("admin")
 def add_employee_route():
     data, error = _parse_employee_form(request.form)
     if error:
         flash(error, "error")
-        return redirect(url_for("index", show_add=1)) 
+        return redirect(url_for("index", show_add=1))
 
     add_employee(
         data["full_name"], data["department"], data["designation"],
         data["joining_date"], data["ctc"], data["pan"], data["pf_uan"],
         data["account_number"], data["ifsc_code"], data["regime_opted"],
+        data["working_days"],
     )
-    flash(f"Employee “{data['full_name']}” added successfully.", "success")
+    flash(f"Employee \u201c{data['full_name']}\u201d added successfully.", "success")
     return redirect(url_for("index"))
 
 
 @app.route("/edit-employee/<EmployeeCode>", methods=["GET", "POST"])
+@role_required("admin")
 def edit_employee_route(EmployeeCode):
     employee = get_employee(EmployeeCode)
     if not employee:
@@ -447,27 +530,34 @@ def edit_employee_route(EmployeeCode):
             EmployeeCode, data["full_name"], data["department"], data["designation"],
             data["joining_date"], data["ctc"], data["pan"], data["pf_uan"],
             data["account_number"], data["ifsc_code"], data["regime_opted"],
+            data["working_days"],
         )
-        flash(f"Employee “{data['full_name']}” updated successfully.", "success")
+        flash(f"Employee \u201c{data['full_name']}\u201d updated successfully.", "success")
         return redirect(url_for("index"))
 
     return render_template("edit_employee.html", employee=employee)
 
 
 @app.route("/delete-employee/<EmployeeCode>", methods=["POST"])
+@role_required("admin")
 def delete_employee_route(EmployeeCode):
     employee = get_employee(EmployeeCode)
     if not employee:
         abort(404)
 
     delete_employee(EmployeeCode)
-    flash(f"Employee “{employee.FullName}” deleted.", "success")
+    flash(f"Employee \u201c{employee.FullName}\u201d deleted.", "success")
     return redirect(url_for("index"))
 
 
 @app.errorhandler(404)
 def not_found(e):
     return render_template("404.html"), 404
+
+
+@app.errorhandler(403)
+def forbidden(e):
+    return render_template("403.html"), 403
 
 
 if __name__ == "__main__":

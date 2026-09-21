@@ -3,7 +3,8 @@
 
 {% block content %}
   <section class="page-head">
-    <div class="page-eyebrow"><i class="fa-solid fa-sparkles" aria-hidden="true"></i> Payroll workspace</div>
+    <div class="page-eyebrow"><i class="fa-solid fa-sparkles" aria-hidden="true"></i>  5Gen Educon Private Limited
+</div>
     <div class="page-head-row">
       <div>
         <h1>Payroll Dashboard</h1>
@@ -100,6 +101,13 @@
       </div>
 
       <div class="form-group">
+        <label for="working_days"><i class="fa-regular fa-calendar-check" aria-hidden="true"></i> Working Days (this month)</label>
+        <input id="working_days" name="working_days" type="number"
+               class="form-control" placeholder="e.g. 26"
+               min="0" max="31" step="1" required>
+      </div>
+
+      <div class="form-group">
         <label for="regime_opted"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i> Regime Opted</label>
         <select id="regime_opted" name="regime_opted" class="form-control">
           <option value="New" selected>New Regime</option>
@@ -188,6 +196,7 @@
                     <i class="fa-solid fa-file-invoice-dollar" aria-hidden="true"></i>
                     <span>Payslip</span>
                   </a>
+                  {% if session.role == 'admin' %}
                   <a href="{{ url_for('edit_employee_route', EmployeeCode=emp.EmployeeCode) }}"
                      class="btn btn-sm btn-ghost">
                     <i class="fa-solid fa-pen" aria-hidden="true"></i>
@@ -202,6 +211,7 @@
                       <span>Delete</span>
                     </button>
                   </form>
+                  {% endif %}
                 </div>
               </td>
             </tr>

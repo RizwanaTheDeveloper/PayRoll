@@ -65,21 +65,43 @@
 
         <nav aria-label="Primary">
 
-          <a
-            href="{{ url_for('index') }}"
-            class="{% if request.endpoint == 'index' %}active{% endif %}"
-          >
+          {% if session.user_id %}
 
-            <i
-              class="fa-solid fa-chart-pie"
-              aria-hidden="true"
-            ></i>
+            <div class="profile-menu" id="profile-menu">
 
-            <span>
-              Dashboard
-            </span>
+              <button
+                type="button"
+                class="profile-trigger"
+                id="profile-trigger"
+                aria-haspopup="true"
+                aria-expanded="false"
+              >
 
-          </a>
+                <span class="profile-avatar" aria-hidden="true">
+                  {{ session.username[:1]|upper }}
+                </span>
+
+                <span class="profile-copy">
+                  <span class="profile-name">{{ session.username }}</span>
+                  <span class="profile-role">{{ session.role }}</span>
+                </span>
+
+                <i class="fa-solid fa-chevron-down profile-caret" aria-hidden="true"></i>
+
+              </button>
+
+              <div class="profile-dropdown" id="profile-dropdown" role="menu">
+
+                <a href="{{ url_for('logout') }}" role="menuitem">
+                  <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
+                  <span>Sign Out</span>
+                </a>
+
+              </div>
+
+            </div>
+
+          {% endif %}
 
         </nav>
 
@@ -195,6 +217,50 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
+
+    /* =========================================================
+       PROFILE DROPDOWN
+    ========================================================== */
+
+    const profileMenu = document.getElementById("profile-menu");
+    const profileTrigger = document.getElementById("profile-trigger");
+
+    if (profileMenu && profileTrigger) {
+
+        function closeProfileMenu() {
+            profileMenu.classList.remove("is-open");
+            profileTrigger.setAttribute("aria-expanded", "false");
+        }
+
+        function openProfileMenu() {
+            profileMenu.classList.add("is-open");
+            profileTrigger.setAttribute("aria-expanded", "true");
+        }
+
+        profileTrigger.addEventListener("click", function (event) {
+            event.stopPropagation();
+
+            if (profileMenu.classList.contains("is-open")) {
+                closeProfileMenu();
+            } else {
+                openProfileMenu();
+            }
+        });
+
+        document.addEventListener("click", function (event) {
+            if (!profileMenu.contains(event.target)) {
+                closeProfileMenu();
+            }
+        });
+
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Escape") {
+                closeProfileMenu();
+            }
+        });
+
+    }
+
 
     /* =========================================================
        ADD EMPLOYEE ELEMENTS

@@ -12,6 +12,7 @@ from database import get_connection
 # employee.FullName
 # employee.CTC
 # employee.RegimeOpted
+# employee.WorkingDays
 # etc.
 
 EMPLOYEE_COLUMNS = """
@@ -26,6 +27,7 @@ EMPLOYEE_COLUMNS = """
     AccountNumber AS "AccountNumber",
     IFSCCode AS "IFSCCode",
     RegimeOpted AS "RegimeOpted",
+    WorkingDays AS "WorkingDays",
     IsActive AS "IsActive"
 """
 
@@ -103,7 +105,8 @@ def add_employee(
     pf_uan,
     account_number,
     ifsc_code,
-    regime_opted
+    regime_opted,
+    working_days
 ):
 
     connection = get_connection()
@@ -159,10 +162,12 @@ def add_employee(
                 AccountNumber,
                 IFSCCode,
                 RegimeOpted,
+                WorkingDays,
                 IsActive
             )
             VALUES
             (
+                %s,
                 %s,
                 %s,
                 %s,
@@ -188,6 +193,7 @@ def add_employee(
             account_number,
             ifsc_code,
             regime_opted,
+            working_days,
             1
         ))
 
@@ -230,7 +236,8 @@ def update_employee(
     pf_uan,
     account_number,
     ifsc_code,
-    regime_opted
+    regime_opted,
+    working_days
 ):
 
     connection = get_connection()
@@ -250,7 +257,8 @@ def update_employee(
                 PFUAN = %s,
                 AccountNumber = %s,
                 IFSCCode = %s,
-                RegimeOpted = %s
+                RegimeOpted = %s,
+                WorkingDays = %s
             WHERE EmployeeCode = %s
         """, (
             full_name,
@@ -263,6 +271,7 @@ def update_employee(
             account_number,
             ifsc_code,
             regime_opted,
+            working_days,
             employee_code
         ))
 

@@ -63,6 +63,10 @@
         <span class="detail-value">{{ employee.JoiningDate.strftime('%d %B %Y') if employee.JoiningDate else '—' }}</span>
       </div>
       <div class="detail-row">
+        <span class="detail-label"><i class="fa-regular fa-calendar-days" aria-hidden="true"></i> Working Days (this month)</span>
+        <span class="detail-value">{{ employee.WorkingDays if employee.WorkingDays is not none else '—' }}</span>
+      </div>
+      <div class="detail-row">
         <span class="detail-label"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i> Regime Opted</span>
         <span class="detail-value">{{ employee.RegimeOpted or 'New' }} Regime</span>
       </div>
