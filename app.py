@@ -501,7 +501,7 @@ def download_payslip(EmployeeCode):
     # Hand the current Flask session cookie to the headless browser so it
     # renders the payslip as the logged-in user instead of as a guest
     # (who would just get redirected to /login).
-    cookie_name = app.session_cookie_name
+    cookie_name = app.config["SESSION_COOKIE_NAME"]
     cookie_value = request.cookies.get(cookie_name)
 
     auth_cookie = None
