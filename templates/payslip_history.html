@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Payslip History · {{ employee.FullName }}{% endblock %}
+
+{% block content %}
+  <section class="page-head">
+    <div class="page-eyebrow"><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> Payslip history</div>
+    <div class="page-head-row">
+      <div>
+        <h1>{{ employee.FullName }}'s Payslips</h1>
+        <p class="muted lead">Preview, print, or download any previous month's payslip.</p>
+      </div>
+      <div class="page-head-action">
+        <a href="{{ url_for('index') }}" class="btn btn-ghost">
+          <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+          Back
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="card table-card">
+    <div class="card-head">
+      <div class="section-heading compact">
+        <div class="section-icon"><i class="fa-solid fa-calendar-days" aria-hidden="true"></i></div>
+        <div>
+          <h2>Pay Periods</h2>
+          <p class="muted small">Employee Code <strong>{{ employee.EmployeeCode }}</strong></p>
+        </div>
+      </div>
+      <span class="record-badge"><i class="fa-solid fa-database" aria-hidden="true"></i> {{ periods|length }} period{{ '' if periods|length == 1 else 's' }}</span>
+    </div>
+
+    {% if periods %}
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Pay Period</th>
+              <th class="num">TDS Deducted</th>
+              <th class="num">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for period in periods %}
+            <tr class="employee-row">
+              <td>
+                <span class="chip"><i class="fa-regular fa-calendar" aria-hidden="true"></i> {{ period.label }}</span>
+              </td>
+              <td class="num salary-cell">
+                {{ (period.monthly_tds | inr) if period.monthly_tds is not none else '—' }}
+              </td>
+              <td class="num">
+                {% if period.has_snapshot %}
+                  <div class="row-actions">
+                    <a href="{{ url_for('generate_payroll', EmployeeCode=employee.EmployeeCode, month=period.month, year=period.year) }}"
+                       class="btn btn-sm btn-primary" target="_blank" rel="noopener">
+                      <i class="fa-solid fa-eye" aria-hidden="true"></i>
+                      <span>Preview</span>
+                    </a>
+                    <a href="{{ url_for('generate_payroll', EmployeeCode=employee.EmployeeCode, month=period.month, year=period.year, autoprint=1) }}"
+                       class="btn btn-sm btn-ghost" target="_blank" rel="noopener">
+                      <i class="fa-solid fa-print" aria-hidden="true"></i>
+                      <span>Print</span>
+                    </a>
+                    <a href="{{ url_for('download_payslip', EmployeeCode=employee.EmployeeCode, month=period.month, year=period.year) }}"
+                       class="btn btn-sm btn-ghost">
+                      <i class="fa-solid fa-download" aria-hidden="true"></i>
+                      <span>Download</span>
+                    </a>
+                  </div>
+                {% else %}
+                  <span class="muted small">No detailed record saved for this period</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-icon"><i class="fa-solid fa-calendar-xmark" aria-hidden="true"></i></div>
+        <h3>No payslips yet</h3>
+        <p class="muted">Once a payslip is generated for this employee, it'll show up here.</p>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}

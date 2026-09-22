@@ -801,6 +801,16 @@ tbody tr:last-child td { border-bottom: none; }
   white-space: nowrap;
 }
 
+.historical-chip {
+  margin-left: 8px;
+  font-family: inherit;
+  color: var(--amber);
+  background: var(--amber-50);
+  border-color: transparent;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
 .employee-name {
   display: inline-flex;
   align-items: center;
@@ -867,6 +877,10 @@ tbody tr:last-child td { border-bottom: none; }
   gap: 12px;
   margin-top: 22px;
   flex-wrap: wrap;
+}
+
+.client-profile-actions-secondary {
+  margin-top: 12px;
 }
 
 @media (max-width: 560px) {

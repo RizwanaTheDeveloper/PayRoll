@@ -1,3 +1,4 @@
+import json
 from datetime import date
 
 from database import get_connection
@@ -70,7 +71,15 @@ def get_month_record(employee_code, month, year):
 # RECORD MONTH
 # ============================================================
 
-def record_month(employee_code, month, year, monthly_tds):
+def record_month(employee_code, month, year, monthly_tds, snapshot=None):
+    """
+    Saves one month's TDS, and — when provided — a full JSON snapshot
+    of that month's payslip (earnings, deductions, tax breakdown, the
+    working days used, etc.) so it can be shown exactly as it was
+    generated later, instead of being recalculated from today's
+    employee data (which may have since changed).
+    """
+
     connection = get_connection()
     cursor = connection.cursor()
 
@@ -81,10 +90,12 @@ def record_month(employee_code, month, year, monthly_tds):
                 EmployeeCode,
                 PayMonth,
                 PayYear,
-                MonthlyTDS
+                MonthlyTDS,
+                Snapshot
             )
             VALUES
             (
+                %s,
                 %s,
                 %s,
                 %s,
@@ -94,7 +105,8 @@ def record_month(employee_code, month, year, monthly_tds):
             employee_code,
             month,
             year,
-            monthly_tds
+            monthly_tds,
+            json.dumps(snapshot) if snapshot is not None else None,
         ))
 
         connection.commit()
@@ -102,6 +114,95 @@ def record_month(employee_code, month, year, monthly_tds):
     except Exception:
         connection.rollback()
         raise
+
+    finally:
+        cursor.close()
+        connection.close()
+
+
+# ============================================================
+# GET ONE MONTH'S FULL SNAPSHOT (for previewing past payslips)
+# ============================================================
+
+def get_month_snapshot(employee_code, month, year):
+    """
+    Returns the stored payslip snapshot dict for this employee/month,
+    or None if nothing was ever recorded for that period, or the
+    record predates snapshots being saved.
+    """
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    try:
+        cursor.execute("""
+            SELECT Snapshot AS "Snapshot"
+            FROM PayrollHistory
+            WHERE EmployeeCode = %s
+              AND PayMonth = %s
+              AND PayYear = %s
+        """, (
+            employee_code,
+            month,
+            year,
+        ))
+
+        row = cursor.fetchone()
+
+        if not row or not row.Snapshot:
+            return None
+
+        return json.loads(row.Snapshot)
+
+    finally:
+        cursor.close()
+        connection.close()
+
+
+# ============================================================
+# LIST PAST PAY PERIODS (for the "Previous Payslips" list)
+# ============================================================
+
+def list_payslip_periods(employee_code, limit=36):
+    """
+    Returns every (month, year) this employee has a PayrollHistory row
+    for, most recent first, along with whether a full snapshot is
+    available to preview/print/download (older rows recorded before
+    snapshots existed will only have the TDS figure).
+    """
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    try:
+        cursor.execute("""
+            SELECT
+                PayMonth AS "PayMonth",
+                PayYear AS "PayYear",
+                MonthlyTDS AS "MonthlyTDS",
+                Snapshot AS "Snapshot"
+            FROM PayrollHistory
+            WHERE EmployeeCode = %s
+            ORDER BY PayYear DESC, PayMonth DESC
+            LIMIT %s
+        """, (
+            employee_code,
+            limit,
+        ))
+
+        rows = cursor.fetchall()
+
+        periods = []
+        for row in rows:
+            periods.append({
+                "month": row.PayMonth,
+                "year": row.PayYear,
+                "monthly_tds": float(row.MonthlyTDS),
+                "has_snapshot": bool(row.Snapshot),
+                "label": date(row.PayYear, row.PayMonth, 1).strftime("%B %Y"),
+            })
+
+        return periods
 
     finally:
         cursor.close()

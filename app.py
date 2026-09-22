@@ -8,7 +8,10 @@ import atexit
 from employees import get_employees, get_employee, add_employee, update_employee, delete_employee
 from payroll import calculate_payroll, current_ist_str
 from tax_engine import calculate_annual_tax
-from payroll_history import get_month_record, record_month, get_fy_summary, fy_label
+from payroll_history import (
+    get_month_record, record_month, get_fy_summary, fy_label,
+    get_month_snapshot, list_payslip_periods,
+)
 from auth import verify_login, login_required, role_required, upsert_employee_login, get_user_by_employee_code
 from playwright.sync_api import sync_playwright
 
@@ -31,18 +34,26 @@ _payslip_serializer = URLSafeTimedSerializer(app.secret_key, salt="payslip-pdf")
 _PAYSLIP_TOKEN_MAX_AGE = 120  # seconds
 
 
-def _generate_payslip_token(employee_code):
-    return _payslip_serializer.dumps({"employee_code": employee_code})
+def _generate_payslip_token(employee_code, month, year):
+    return _payslip_serializer.dumps({
+        "employee_code": employee_code,
+        "month": month,
+        "year": year,
+    })
 
 
-def _verify_payslip_token(token, employee_code):
+def _verify_payslip_token(token, employee_code, month, year):
     if not token:
         return False
     try:
         data = _payslip_serializer.loads(token, max_age=_PAYSLIP_TOKEN_MAX_AGE)
     except (BadSignature, SignatureExpired):
         return False
-    return data.get("employee_code") == employee_code
+    return (
+        data.get("employee_code") == employee_code
+        and data.get("month") == month
+        and data.get("year") == year
+    )
 
 
 # ============================================================
@@ -452,10 +463,103 @@ def _client_can_view(employee_code):
     return not restricted_to or restricted_to == employee_code
 
 
+def _build_payslip_view(employee, month, year):
+    """
+    Builds everything payroll.html needs for one employee/month/year,
+    either freshly calculated (the current month) or from a saved
+    snapshot (any past month). Returns None if a past period was asked
+    for but nothing was ever recorded for it.
+    """
+    today = date.today()
+    is_current_period = (month == today.month and year == today.year)
+    period_date = date(year, month, 1)
+
+    if is_current_period:
+        payroll = calculate_payroll(employee)
+
+        annual_gross = payroll["gross_earnings_full"] * 12
+        regime = getattr(employee, "RegimeOpted", None) or "New"
+        tax = calculate_annual_tax(annual_gross, regime)
+
+        existing_tds = get_month_record(employee.EmployeeCode, month, year)
+        if existing_tds is not None:
+            monthly_tds = existing_tds
+        else:
+            tax_deducted_before, _, executions_left_before = get_fy_summary(employee.EmployeeCode, today)
+            remaining_including_this = max(executions_left_before, 1)
+            monthly_tds = round(
+                max(tax["net_tax"] - tax_deducted_before, 0) / remaining_including_this, 2
+            )
+
+        payroll["tds"] = monthly_tds
+        payroll["total_deductions"] = payroll["professional_tax"] + payroll["epf"] + monthly_tds
+        payroll["net_salary"] = payroll["gross_earnings"] - payroll["total_deductions"]
+
+        tax_deducted_till_date, executions_done, executions_left = get_fy_summary(employee.EmployeeCode, today)
+        generated_at = current_ist_str()
+        period_fy_label = fy_label(today)
+
+        if existing_tds is None:
+            # First time this month's payslip has been generated —
+            # lock in the TDS and save a full snapshot so it can be
+            # previewed/printed/downloaded exactly as-is later, even
+            # after the employee's CTC, working days, or regime change.
+            record_month(
+                employee.EmployeeCode, month, year, monthly_tds,
+                snapshot={
+                    "payroll": payroll,
+                    "tax": tax,
+                    "generated_at": generated_at,
+                    "fy_label": period_fy_label,
+                    "tax_deducted_till_date": tax_deducted_till_date,
+                    "executions_left": executions_left,
+                },
+            )
+
+        display_employee = employee
+
+    else:
+        snapshot = get_month_snapshot(employee.EmployeeCode, month, year)
+        if not snapshot:
+            return None
+
+        payroll = snapshot["payroll"]
+        tax = snapshot["tax"]
+        generated_at = snapshot.get("generated_at", period_date.strftime("%d %b %Y"))
+        period_fy_label = snapshot.get("fy_label", fy_label(period_date))
+        tax_deducted_till_date = snapshot.get("tax_deducted_till_date", 0)
+        executions_left = snapshot.get("executions_left", 0)
+
+        # Show the WorkingDays/Regime actually used that month, not
+        # whatever the employee record currently holds.
+        display_employee = employee._replace(
+            WorkingDays=payroll.get("working_days", employee.WorkingDays),
+            RegimeOpted=tax.get("regime", employee.RegimeOpted),
+        )
+
+    return {
+        "employee": display_employee,
+        "payroll": payroll,
+        "tax": tax,
+        "generated_at": generated_at,
+        "fy_label": period_fy_label,
+        "tax_deducted_till_date": tax_deducted_till_date,
+        "executions_left": executions_left,
+        "is_current_period": is_current_period,
+        "period_label": period_date.strftime("%B %Y"),
+        "month": month,
+        "year": year,
+    }
+
+
 @app.route("/generate-payroll/<EmployeeCode>")
 def generate_payroll(EmployeeCode):
+    today = date.today()
+    month = request.args.get("month", type=int) or today.month
+    year = request.args.get("year", type=int) or today.year
+
     token = request.args.get("token")
-    authorized_via_token = _verify_payslip_token(token, EmployeeCode)
+    authorized_via_token = _verify_payslip_token(token, EmployeeCode, month, year)
 
     if not authorized_via_token:
         if "user_id" not in session:
@@ -469,43 +573,13 @@ def generate_payroll(EmployeeCode):
     if not employee:
         abort(404)
 
-    payroll = calculate_payroll(employee)
-    generated_at = current_ist_str()
+    view = _build_payslip_view(employee, month, year)
 
-    today = date.today()
-    month, year = today.month, today.year
+    if view is None:
+        flash(f"No payslip is on record for {date(year, month, 1).strftime('%B %Y')}.", "error")
+        return redirect(url_for("payslip_history", EmployeeCode=EmployeeCode))
 
-    annual_gross = payroll["gross_earnings_full"] * 12
-    regime = getattr(employee, "RegimeOpted", None) or "New"
-    tax = calculate_annual_tax(annual_gross, regime)
-
-    existing_tds = get_month_record(EmployeeCode, month, year)
-    if existing_tds is not None:
-        monthly_tds = existing_tds
-    else:
-        tax_deducted_before, _, executions_left_before = get_fy_summary(EmployeeCode, today)
-        remaining_including_this = max(executions_left_before, 1)
-        monthly_tds = round(
-            max(tax["net_tax"] - tax_deducted_before, 0) / remaining_including_this, 2
-        )
-        record_month(EmployeeCode, month, year, monthly_tds)
-
-    tax_deducted_till_date, executions_done, executions_left = get_fy_summary(EmployeeCode, today)
-
-    payroll["tds"] = monthly_tds
-    payroll["total_deductions"] = payroll["professional_tax"] + payroll["epf"] + monthly_tds
-    payroll["net_salary"] = payroll["gross_earnings"] - payroll["total_deductions"]
-
-    return render_template(
-        "payroll.html",
-        employee=employee,
-        payroll=payroll,
-        tax=tax,
-        generated_at=generated_at,
-        fy_label=fy_label(today),
-        tax_deducted_till_date=tax_deducted_till_date,
-        executions_left=executions_left,
-    )
+    return render_template("payroll.html", **view)
 
 
 @app.route("/download-payslip/<EmployeeCode>")
@@ -519,12 +593,18 @@ def download_payslip(EmployeeCode):
     if not employee:
         abort(404)
 
-    token = _generate_payslip_token(EmployeeCode)
+    today = date.today()
+    month = request.args.get("month", type=int) or today.month
+    year = request.args.get("year", type=int) or today.year
+
+    token = _generate_payslip_token(EmployeeCode, month, year)
 
     payslip_url = url_for(
         "generate_payroll",
         EmployeeCode=EmployeeCode,
         pdf=1,
+        month=month,
+        year=year,
         token=token,
         _external=True,
     )
@@ -536,11 +616,46 @@ def download_payslip(EmployeeCode):
         payslip_url,
     ).result()
 
+    period_suffix = date(year, month, 1).strftime("%b-%Y")
+
     return send_file(
         BytesIO(pdf_bytes),
         mimetype="application/pdf",
         as_attachment=True,
-        download_name=f"Payslip-{EmployeeCode}.pdf",
+        download_name=f"Payslip-{EmployeeCode}-{period_suffix}.pdf",
+    )
+
+
+@app.route("/payslip-history/<EmployeeCode>")
+@login_required
+def payslip_history(EmployeeCode):
+    if not _client_can_view(EmployeeCode):
+        abort(403)
+
+    employee = get_employee(EmployeeCode)
+    if not employee:
+        abort(404)
+
+    today = date.today()
+    periods = list_payslip_periods(EmployeeCode)
+
+    # The current month won't have a PayrollHistory row until its
+    # payslip is generated for the first time — still show it as an
+    # available period so it's not missing from the list.
+    has_current = any(p["month"] == today.month and p["year"] == today.year for p in periods)
+    if not has_current:
+        periods.insert(0, {
+            "month": today.month,
+            "year": today.year,
+            "monthly_tds": None,
+            "has_snapshot": True,
+            "label": today.strftime("%B %Y"),
+        })
+
+    return render_template(
+        "payslip_history.html",
+        employee=employee,
+        periods=periods,
     )
 
 
