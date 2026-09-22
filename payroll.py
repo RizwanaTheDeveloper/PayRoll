@@ -11,11 +11,19 @@ Fixes vs. the original payroll.py:
   4. HRA tax exemption calculated per Income Tax rules (least of: actual
      HRA received, rent paid − 10% of basic, 50%/40% of basic for
      metro/non-metro) rather than just adding HRA as a taxable component.
-  5. Pro-rating for Loss of Pay (LOP) / days worked.
+  5. Pro-rating for Loss of Pay (LOP) / days worked — applied consistently
+     to earnings AND to the PF wage base (fixed: PF used to be calculated
+     on the full month's basic even when the employee had LOP days).
   6. Inputs and rates are still simplified for demo purposes — always
      verify against current CBDT slabs, your state's Professional Tax
      schedule, and your company's actual PF/HRA policy before using this
      for real payroll.
+
+Note on TDS: this module derives annual income from THIS month's gross x 12,
+which is volatile for months with LOP. If you're reconciling TDS against a
+financial-year total elsewhere (e.g. payroll_history.py), treat the "tds"
+value returned here as a starting estimate, not the final withheld amount —
+override it with your FY-to-date reconciliation before using it on a payslip.
 """
 
 import calendar
@@ -134,7 +142,13 @@ def _calculate_payroll_inputs(inputs: PayrollInputs) -> dict:
     gross_earnings = basic + house_rent_allowance + special_allowance + leave_travel_allowance + bonus
 
     # --- PF ---
-    pf_wage = inputs.basic_salary if inputs.pf_on_full_basic else min(inputs.basic_salary, PF_WAGE_CEILING)
+    # PF wage must be prorated the same way as earnings: an employee with
+    # LOP days earned less basic that month, so PF (employee + employer)
+    # should be calculated on the basic actually earned, not the full
+    # month's sanctioned basic. This was previously a bug: PF used
+    # `inputs.basic_salary` unprorated, so LOP had no effect on PF.
+    pf_wage_full = inputs.basic_salary if inputs.pf_on_full_basic else min(inputs.basic_salary, PF_WAGE_CEILING)
+    pf_wage = pf_wage_full * prorate_factor
     employee_pf = pf_wage * EPF_EMPLOYEE_RATE
     employer_pf = pf_wage * EPF_EMPLOYER_RATE
 
@@ -175,7 +189,12 @@ def _calculate_payroll_inputs(inputs: PayrollInputs) -> dict:
 
 
 def calculate_payroll(employee_or_inputs) -> dict:
-    """Calculate payroll for Flask employee rows or PayrollInputs."""
+    """Calculate payroll for either a Flask/ORM employee row or a PayrollInputs object.
+
+    - Pass a PayrollInputs instance directly for ad-hoc / test calculations.
+    - Pass an employee row (must have .CTC, and optionally .WorkingDays and
+      .RegimeOpted) to calculate that employee's payroll for the current month.
+    """
     if isinstance(employee_or_inputs, PayrollInputs):
         return _calculate_payroll_inputs(employee_or_inputs)
 
@@ -203,6 +222,14 @@ def calculate_payroll(employee_or_inputs) -> dict:
     ))
 
     payroll["epf"] = payroll["employee_epf"]
+    payroll["working_days"] = days_paid
+    payroll["days_in_month"] = days_in_month
+    payroll["proration_factor"] = round(days_paid / days_in_month, 4)
+    payroll["basic_full"] = full_month["basic"]
+    payroll["hra_full"] = full_month["hra"]
+    payroll["special_allowance_full"] = full_month["special_allowance"]
+    payroll["lta_full"] = full_month["lta"]
+    payroll["bonus_full"] = full_month["bonus"]
     payroll["gross_earnings_full"] = full_month["gross_earnings"]
     return payroll
 
