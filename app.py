@@ -1,15 +1,15 @@
 from datetime import datetime, date
-from urllib.parse import urlparse
 from flask import Flask, redirect, render_template, request, url_for, flash, abort, send_file, session
 from io import BytesIO
 from concurrent.futures import ThreadPoolExecutor
+from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 import atexit
 
 from employees import get_employees, get_employee, add_employee, update_employee, delete_employee
 from payroll import calculate_payroll, current_ist_str
 from tax_engine import calculate_annual_tax
 from payroll_history import get_month_record, record_month, get_fy_summary, fy_label
-from auth import verify_login, login_required, role_required
+from auth import verify_login, login_required, role_required, upsert_employee_login, get_user_by_employee_code
 from playwright.sync_api import sync_playwright
 
 
@@ -17,6 +17,32 @@ app = Flask(__name__)
 app.secret_key = "justarandomsecretkey"
 
 COMPANY_NAME = "5Gen Educon Private Limited"
+
+
+# ============================================================
+# SHORT-LIVED PDF-RENDER TOKENS
+# ============================================================
+
+# The headless browser that renders the payslip PDF can't carry your
+# browser session, so instead of forwarding cookies (fragile across
+# domains/schemes) we hand it one single-purpose, expiring token that
+# only unlocks that one employee's payslip page.
+_payslip_serializer = URLSafeTimedSerializer(app.secret_key, salt="payslip-pdf")
+_PAYSLIP_TOKEN_MAX_AGE = 120  # seconds
+
+
+def _generate_payslip_token(employee_code):
+    return _payslip_serializer.dumps({"employee_code": employee_code})
+
+
+def _verify_payslip_token(token, employee_code):
+    if not token:
+        return False
+    try:
+        data = _payslip_serializer.loads(token, max_age=_PAYSLIP_TOKEN_MAX_AGE)
+    except (BadSignature, SignatureExpired):
+        return False
+    return data.get("employee_code") == employee_code
 
 
 # ============================================================
@@ -48,14 +74,12 @@ def _get_pdf_browser():
     return _pdf_browser
 
 
-def _render_payslip_pdf(payslip_url, auth_cookie):
+def _render_payslip_pdf(payslip_url):
     """Render one payslip PDF entirely on the dedicated worker thread.
 
-    auth_cookie: dict with the Flask session cookie (name/value/domain/path)
-    so the headless browser is authenticated as the requesting user.
-    Without this, Playwright hits the login-protected payslip route as an
-    anonymous visitor and gets redirected to /login, producing a PDF of
-    the login page instead of the payslip.
+    payslip_url already carries a short-lived, single-employee token
+    (see _generate_payslip_token) so the headless browser can open the
+    login-protected payslip page without needing a real session cookie.
     """
     browser = _get_pdf_browser()
 
@@ -64,20 +88,17 @@ def _render_payslip_pdf(payslip_url, auth_cookie):
         device_scale_factor=1,
     )
 
-    if auth_cookie:
-        context.add_cookies([auth_cookie])
-
     page = context.new_page()
 
     try:
         page.goto(payslip_url, wait_until="networkidle")
 
-        # If the cookie didn't authenticate us for any reason, fail loudly
+        # If the token didn't authorize us for any reason, fail loudly
         # instead of silently returning a PDF of the login screen.
         if "/login" in page.url:
             raise RuntimeError(
                 "Payslip PDF render was redirected to the login page "
-                "(session cookie was missing or invalid)."
+                "(the render token was missing, expired, or invalid)."
             )
 
         page.evaluate(
@@ -432,10 +453,17 @@ def _client_can_view(employee_code):
 
 
 @app.route("/generate-payroll/<EmployeeCode>")
-@login_required
 def generate_payroll(EmployeeCode):
-    if not _client_can_view(EmployeeCode):
-        abort(403)
+    token = request.args.get("token")
+    authorized_via_token = _verify_payslip_token(token, EmployeeCode)
+
+    if not authorized_via_token:
+        if "user_id" not in session:
+            flash("Please sign in to continue.", "error")
+            return redirect(url_for("login", next=request.path))
+
+        if not _client_can_view(EmployeeCode):
+            abort(403)
 
     employee = get_employee(EmployeeCode)
     if not employee:
@@ -491,35 +519,21 @@ def download_payslip(EmployeeCode):
     if not employee:
         abort(404)
 
+    token = _generate_payslip_token(EmployeeCode)
+
     payslip_url = url_for(
         "generate_payroll",
         EmployeeCode=EmployeeCode,
         pdf=1,
+        token=token,
         _external=True,
     )
-
-    # Hand the current Flask session cookie to the headless browser so it
-    # renders the payslip as the logged-in user instead of as a guest
-    # (who would just get redirected to /login).
-    cookie_name = app.config["SESSION_COOKIE_NAME"]
-    cookie_value = request.cookies.get(cookie_name)
-
-    auth_cookie = None
-    if cookie_value:
-        parsed_url = urlparse(payslip_url)
-        auth_cookie = {
-            "name": cookie_name,
-            "value": cookie_value,
-            "domain": parsed_url.hostname,
-            "path": "/",
-        }
 
     # The Flask request thread only waits for the result. Every Playwright
     # operation itself executes on the dedicated worker thread.
     pdf_bytes = _pdf_executor.submit(
         _render_payslip_pdf,
         payslip_url,
-        auth_cookie,
     ).result()
 
     return send_file(
@@ -542,12 +556,23 @@ def add_employee_route():
         flash(error, "error")
         return redirect(url_for("index", show_add=1))
 
-    add_employee(
+    employee_code = add_employee(
         data["full_name"], data["department"], data["designation"],
         data["joining_date"], data["ctc"], data["pan"], data["pf_uan"],
         data["account_number"], data["ifsc_code"], data["regime_opted"],
         data["working_days"],
     )
+
+    # Optional login account for this employee — neither field is
+    # required, and a login is only created if BOTH are provided.
+    login_username = (request.form.get("login_username") or "").strip()
+    login_password = request.form.get("login_password") or ""
+
+    if login_username or login_password:
+        ok, message = upsert_employee_login(employee_code, login_username, login_password)
+        if not ok:
+            flash(message, "error")
+
     flash(f"Employee \u201c{data['full_name']}\u201d added successfully.", "success")
     return redirect(url_for("index"))
 
@@ -571,10 +596,24 @@ def edit_employee_route(EmployeeCode):
             data["account_number"], data["ifsc_code"], data["regime_opted"],
             data["working_days"],
         )
+
+        # Optional login account — blank fields leave the existing
+        # username/password untouched (whichever was actually typed
+        # gets updated; the other stays as-is).
+        login_username = (request.form.get("login_username") or "").strip()
+        login_password = request.form.get("login_password") or ""
+
+        if login_username or login_password:
+            ok, message = upsert_employee_login(EmployeeCode, login_username, login_password)
+            if not ok:
+                flash(message, "error")
+
         flash(f"Employee \u201c{data['full_name']}\u201d updated successfully.", "success")
         return redirect(url_for("index"))
 
-    return render_template("edit_employee.html", employee=employee)
+    existing_login = get_user_by_employee_code(EmployeeCode)
+
+    return render_template("edit_employee.html", employee=employee, existing_login=existing_login)
 
 
 @app.route("/delete-employee/<EmployeeCode>", methods=["POST"])

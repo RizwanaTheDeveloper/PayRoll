@@ -245,4 +245,15 @@
 
 </div>
 </section>
+
+{% if request.args.get('autoprint') %}
+<script>
+  // Opened via the "Print" shortcut — trigger the print dialog once the
+  // page (and its fonts/styles) have actually finished loading.
+  window.addEventListener("load", function () {
+    window.print();
+  });
+</script>
+{% endif %}
+
 {% endblock %}

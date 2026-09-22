@@ -576,6 +576,12 @@ a { color: inherit; }
   letter-spacing: .02em;
 }
 
+.field-hint {
+  margin: 2px 0 0;
+  font-size: .74rem;
+  line-height: 1.4;
+}
+
 .form-control {
   width: 100%;
   min-height: 48px;

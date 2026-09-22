@@ -12,7 +12,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap"
+    href="https://fonts.googleap
+    is.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap"
     rel="stylesheet"
   >
 
@@ -263,6 +264,45 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     /* =========================================================
+       GENERIC PASSWORD VISIBILITY TOGGLE
+       (used by any button.toggle-visibility[data-target="input_id"])
+    ========================================================== */
+
+    document
+        .querySelectorAll(".toggle-visibility")
+        .forEach(function (btn) {
+
+            const targetInput = document.getElementById(
+                btn.dataset.target
+            );
+
+            if (!targetInput) {
+                return;
+            }
+
+            btn.addEventListener("click", function () {
+
+                const isHidden = targetInput.type === "password";
+
+                targetInput.type = isHidden ? "text" : "password";
+                btn.setAttribute("aria-pressed", String(isHidden));
+                btn.setAttribute(
+                    "aria-label",
+                    isHidden ? "Hide password" : "Show password"
+                );
+
+                const icon = btn.querySelector("i");
+                if (icon) {
+                    icon.classList.toggle("fa-eye", !isHidden);
+                    icon.classList.toggle("fa-eye-slash", isHidden);
+                }
+
+            });
+
+        });
+
+
+    /* =========================================================
        ADD EMPLOYEE ELEMENTS
     ========================================================== */
 
@@ -334,25 +374,17 @@ document.addEventListener("DOMContentLoaded", function () {
                         "is-collapsed"
                     )
                 ) {
-
                     openAddEmployeeForm();
 
                 } else {
-
                     closeAddEmployeeForm();
-
                 }
-
             }
         );
-
-
         /* =====================================================
            X BUTTON INSIDE FORM
         ====================================================== */
-
         if (closeAddBtn) {
-
             closeAddBtn.addEventListener(
                 "click",
                 function () {
@@ -361,10 +393,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 }
             );
-
         }
-
-
         /* =====================================================
            IF SERVER RETURNS ?show_add=1
            
@@ -375,23 +404,17 @@ document.addEventListener("DOMContentLoaded", function () {
            
            In that case the form remains open.
         ====================================================== */
-
         if (
             !addEmployeeCard.classList.contains(
                 "is-collapsed"
             )
         ) {
-
             if (toggleLabel) {
                 toggleLabel.textContent =
                     "Close Form";
             }
-
         }
-
     }
-
-
     /* =========================================================
        SAVE EMPLOYEE FORM
        
@@ -411,179 +434,82 @@ document.addEventListener("DOMContentLoaded", function () {
             ↓
        FORM CLOSED
     ========================================================== */
-
-
 if (addEmployeeForm) {
-
-    addEmployeeForm.addEventListener(
-        "submit",
+    addEmployeeForm.addEventListener("submit",
         function () {
-
-            /*
-             * Let the browser submit the form normally.
-             * DO NOT use event.preventDefault().
-             */
-
             if (!addEmployeeForm.checkValidity()) {
                 return;
             }
-
-
             /* =================================================
                CLOSE THE FORM IMMEDIATELY
             ================================================= */
-
             if (addEmployeeCard) {
-
-                addEmployeeCard.classList.add(
-                    "is-collapsed"
-                );
-
+                addEmployeeCard.classList.add("is-collapsed");
             }
-
-
             /* =================================================
                CHANGE ADD EMPLOYEE BUTTON BACK
             ================================================= */
-
             if (toggleAddBtn) {
-
-                const toggleLabel =
-                    toggleAddBtn.querySelector("span");
+                const toggleLabel =toggleAddBtn.querySelector("span");
 
                 if (toggleLabel) {
-
                     toggleLabel.textContent =
                         "Add Employee";
 
                 }
-
             }
-
-
             /* =================================================
                SAVE BUTTON → SAVING...
             ================================================= */
-
-            const saveButton =
-                addEmployeeForm.querySelector(
-                    'button[type="submit"]'
-                );
-
-
+            const saveButton =addEmployeeForm.querySelector('button[type="submit"]');
             if (saveButton) {
-
                 saveButton.disabled = true;
-
                 saveButton.innerHTML = `
                     <i
                         class="fa-solid fa-spinner fa-spin"
                         aria-hidden="true"
                     ></i>
-
                     <span>
                         Saving...
                     </span>
                 `;
-
             }
-
         }
     );
-
 }
-
-
     /* =========================================================
        FORM INPUT ERROR RESET
     ========================================================== */
-
-    document
-        .querySelectorAll(".form-control")
-        .forEach(function (input) {
-
-            input.addEventListener(
-                "input",
+    document.querySelectorAll(".form-control").forEach(function (input) {
+            input.addEventListener("input",
                 function () {
-
-                    input.classList.remove(
-                        "input-error"
-                    );
-
+                    input.classList.remove("input-error");
                 }
             );
 
         });
-
-
     /* =========================================================
        FLASH MESSAGE AUTO CLOSE
     ========================================================== */
-
-    document
-        .querySelectorAll(
-            ".alert[data-autohide]"
-        )
+    document.querySelectorAll(".alert[data-autohide]")
         .forEach(function (alertEl) {
-
-            const delay =
-                parseInt(
-                    alertEl.dataset.autohide,
-                    10
-                ) || 3000;
-
-
+            const delay =parseInt(alertEl.dataset.autohide,10) || 3000;
             function dismissAlert() {
-
-                alertEl.classList.add(
-                    "alert-hide"
-                );
-
-                setTimeout(
-                    function () {
-
-                        alertEl.remove();
-
-                    },
-                    220
-                );
-
+                alertEl.classList.add("alert-hide");
+                setTimeout(function () {
+                    alertEl.remove();},220);
             }
-
-
-            const timer =
-                setTimeout(
-                    dismissAlert,
-                    delay
-                );
-
-
-            const closeBtn =
-                alertEl.querySelector(
-                    ".alert-close"
-                );
-
-
+            const timer =setTimeout(dismissAlert,delay);
+            const closeBtn =alertEl.querySelector(".alert-close");
             if (closeBtn) {
-
-                closeBtn.addEventListener(
-                    "click",
-                    function () {
-
+                closeBtn.addEventListener("click",function () {
                         clearTimeout(timer);
-
                         dismissAlert();
-
                     }
                 );
-
             }
-
         });
-
 });
 </script>
-
-
 </body>
 </html>
