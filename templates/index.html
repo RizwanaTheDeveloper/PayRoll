@@ -200,18 +200,18 @@
           <tbody>
             {% for emp in employees %}
             <tr class="employee-row">
-              <td><span class="chip"><i class="fa-solid fa-hashtag" aria-hidden="true"></i> {{ emp.EmployeeCode }}</span></td>
-              <td>
+              <td data-label=""><span class="chip"><i class="fa-solid fa-hashtag" aria-hidden="true"></i> {{ emp.EmployeeCode }}</span></td>
+              <td data-label="">
                 <div class="employee-name">
                   <span class="avatar">{{ emp.FullName[:1]|upper }}</span>
                   <span>{{ emp.FullName }}</span>
                 </div>
               </td>
-              <td><span class="designation">{{ emp.Department or '—' }}</span></td>
-              <td><span class="designation">{{ emp.Designation or '—' }}</span></td>
-              <td><span class="designation">{{ emp.JoiningDate.strftime('%d %b %Y') if emp.JoiningDate else '—' }}</span></td>
-              <td class="num salary-cell">{{ emp.CTC | inr }}</td>
-              <td class="num">
+              <td data-label="Department"><span class="designation">{{ emp.Department or '—' }}</span></td>
+              <td data-label="Designation"><span class="designation">{{ emp.Designation or '—' }}</span></td>
+              <td data-label="Joining Date"><span class="designation">{{ emp.JoiningDate.strftime('%d %b %Y') if emp.JoiningDate else '—' }}</span></td>
+              <td class="num salary-cell" data-label="CTC (Annual)">{{ emp.CTC | inr }}</td>
+              <td class="num stacked-cell" data-label="Actions">
                 <div class="row-actions">
                   <a href="{{ url_for('generate_payroll', EmployeeCode=emp.EmployeeCode) }}"
                      class="btn btn-sm btn-primary">

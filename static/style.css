@@ -786,6 +786,82 @@ tbody tr:last-child td { border-bottom: none; }
 }
 .employee-row:hover td { background: #f8fbff; }
 
+/* ---------- Tables → stacked cards on mobile ----------
+   Below this width the table header is hidden and every row becomes its
+   own card, with each cell laid out as a "label — value" row using its
+   data-label attribute. This applies to any table wrapped in
+   .table-wrapper (employees list, payslip history). */
+@media (max-width: 700px) {
+  .table-wrapper {
+    border: none;
+    overflow: visible;
+  }
+
+  table { min-width: 0; width: 100%; }
+
+  thead { display: none; }
+
+  tbody, tr, td { display: block; width: 100%; }
+
+  tbody tr {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: var(--shadow-sm);
+    padding: 6px 14px;
+    margin-bottom: 14px;
+  }
+  tbody tr:last-child { margin-bottom: 0; }
+
+  tbody td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 11px 0;
+    border-bottom: 1px dashed #eef2f7;
+    text-align: right;
+  }
+  tbody tr td:last-child { border-bottom: none; }
+
+  tbody td::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    color: var(--muted);
+    font-size: .69rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    text-align: left;
+  }
+  /* Cells whose value is self-explanatory (code chip, name+avatar) skip
+     the redundant label. */
+  tbody td[data-label=""]::before,
+  tbody td:not([data-label])::before { content: none; }
+
+  tbody td.stacked-cell {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  tbody td.stacked-cell::before { text-align: left; }
+
+  .employee-name { justify-content: flex-start; }
+
+  .row-actions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .row-actions .btn,
+  .row-actions .inline-form {
+    flex: 1 1 calc(50% - 4px);
+  }
+  .row-actions .btn { justify-content: center; width: auto; }
+  .row-actions .inline-form .btn { width: 100%; }
+}
+
 .chip {
   display: inline-flex;
   align-items: center;
@@ -1441,6 +1517,18 @@ tbody tr:last-child td { border-bottom: none; }
 @media (max-width: 520px) {
   .navbar nav a span { display: none; }
   .navbar nav a { width: 40px; height: 40px; justify-content: center; padding: 0; }
+  /* The rules above were meant for icon-only top-level nav links, but were
+     also matching the "Sign Out" link inside the profile dropdown and
+     hiding its label / squashing it into a 40x40 box. Restore it. */
+  .profile-menu .profile-dropdown a {
+    width: auto;
+    height: auto;
+    justify-content: flex-start;
+    padding: 10px 12px;
+  }
+  .profile-menu .profile-dropdown a span {
+    display: inline;
+  }
   .brand-subtitle { display: none; }
   .page-head h1 { font-size: 1.6rem; }
   .card { padding: 16px; }

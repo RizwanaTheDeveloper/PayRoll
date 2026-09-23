@@ -43,13 +43,13 @@
           <tbody>
             {% for period in periods %}
             <tr class="employee-row">
-              <td>
+              <td data-label="">
                 <span class="chip"><i class="fa-regular fa-calendar" aria-hidden="true"></i> {{ period.label }}</span>
               </td>
-              <td class="num salary-cell">
+              <td class="num salary-cell" data-label="TDS Deducted">
                 {{ (period.monthly_tds | inr) if period.monthly_tds is not none else '—' }}
               </td>
-              <td class="num">
+              <td class="num stacked-cell" data-label="Actions">
                 {% if period.has_snapshot %}
                   <div class="row-actions">
                     <a href="{{ url_for('generate_payroll', EmployeeCode=employee.EmployeeCode, month=period.month, year=period.year) }}"
