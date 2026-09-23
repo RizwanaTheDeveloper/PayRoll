@@ -477,6 +477,52 @@ if (addEmployeeForm) {
     );
 }
     /* =========================================================
+       PAN / PF UAN — LETTERS & NUMBERS ONLY (no special characters)
+       ACCOUNT NUMBER — DIGITS ONLY
+    ========================================================== */
+
+    ["pan", "pf_uan"].forEach(function (fieldId) {
+        var field = document.getElementById(fieldId);
+        if (!field) return;
+
+        field.addEventListener("input", function () {
+            var cleaned = field.value.replace(/[^a-zA-Z0-9]/g, "");
+            if (cleaned !== field.value) {
+                field.value = cleaned;
+            }
+        });
+
+        // Block paste of anything containing special characters.
+        field.addEventListener("paste", function (event) {
+            var pasted = (event.clipboardData || window.clipboardData).getData("text");
+            if (/[^a-zA-Z0-9]/.test(pasted)) {
+                event.preventDefault();
+                var cleanedPaste = pasted.replace(/[^a-zA-Z0-9]/g, "");
+                document.execCommand("insertText", false, cleanedPaste);
+            }
+        });
+    });
+
+    var accountNumberField = document.getElementById("account_number");
+    if (accountNumberField) {
+        accountNumberField.addEventListener("input", function () {
+            var digitsOnly = accountNumberField.value.replace(/[^0-9]/g, "");
+            if (digitsOnly !== accountNumberField.value) {
+                accountNumberField.value = digitsOnly;
+            }
+        });
+
+        accountNumberField.addEventListener("paste", function (event) {
+            var pasted = (event.clipboardData || window.clipboardData).getData("text");
+            if (/[^0-9]/.test(pasted)) {
+                event.preventDefault();
+                var cleanedPaste = pasted.replace(/[^0-9]/g, "");
+                document.execCommand("insertText", false, cleanedPaste);
+            }
+        });
+    }
+
+    /* =========================================================
        FORM INPUT ERROR RESET
     ========================================================== */
     document.querySelectorAll(".form-control").forEach(function (input) {

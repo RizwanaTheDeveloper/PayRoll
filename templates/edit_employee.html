@@ -74,19 +74,22 @@
       <div class="form-group">
         <label for="pan"><i class="fa-solid fa-id-badge" aria-hidden="true"></i> PAN</label>
         <input id="pan" name="pan" class="form-control"
-               value="{{ employee.PAN or '' }}" maxlength="10" autocomplete="off" style="text-transform:uppercase;">
+               value="{{ employee.PAN or '' }}" maxlength="10" autocomplete="off" style="text-transform:uppercase;"
+               pattern="[A-Za-z0-9]*" title="Letters and numbers only — no special characters">
       </div>
 
       <div class="form-group">
         <label for="pf_uan"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> PF UAN</label>
         <input id="pf_uan" name="pf_uan" class="form-control"
-               value="{{ employee.PFUAN or '' }}" maxlength="20" autocomplete="off">
+               value="{{ employee.PFUAN or '' }}" maxlength="20" autocomplete="off"
+               pattern="[A-Za-z0-9]*" title="Letters and numbers only — no special characters">
       </div>
 
       <div class="form-group">
         <label for="account_number"><i class="fa-solid fa-building-columns" aria-hidden="true"></i> Account No.</label>
         <input id="account_number" name="account_number" class="form-control"
-               value="{{ employee.AccountNumber or '' }}" maxlength="30" autocomplete="off">
+               value="{{ employee.AccountNumber or '' }}" maxlength="30" autocomplete="off"
+               inputmode="numeric" pattern="[0-9]*" title="Numbers only">
       </div>
 
       <div class="form-group">

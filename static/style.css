@@ -1457,6 +1457,32 @@ tbody tr:last-child td { border-bottom: none; }
   .stat-card { min-height: auto; padding: 16px; }
   table { min-width: 720px; }
 }
+/* ---------- Responsive: very small phones ---------- */
+@media (max-width: 400px) {
+  .container { padding: 20px 0 40px; }
+  .nav-inner { padding: 0 10px; min-height: 58px; }
+  .brand-mark { width: 36px; height: 36px; }
+  .brand-name { font-size: .95rem; }
+  .card { padding: 14px; border-radius: 13px; }
+  .form-card[style*="max-width"] { margin: 30px auto !important; }
+  .stat-card { flex-direction: column; gap: 10px; }
+  .value { word-break: break-word; }
+  .btn { font-size: .8rem; padding: 9px 12px; }
+  .row-actions { flex-wrap: wrap; justify-content: flex-start; }
+  .chip { font-size: .68rem; }
+  .payslip-brand h1 { font-size: 1.3rem; }
+  .net-value { font-size: 1.6rem; }
+}
+
+/* Login card and any inline max-width card shrink to fit narrow viewports
+   instead of overflowing or leaving cramped side margins. */
+@media (max-width: 480px) {
+  .card[style*="max-width:420px"] {
+    max-width: 100% !important;
+    margin: 24px auto !important;
+  }
+}
+
 .form-card.is-collapsed { display: none; }
 
 .page-head-action { flex-shrink: 0; }
