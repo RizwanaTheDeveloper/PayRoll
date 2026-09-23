@@ -1412,6 +1412,19 @@ tbody tr:last-child td { border-bottom: none; }
   .form-submit { width: 100%; }
   .form-actions-row { flex-direction: column; }
   .form-actions-row .btn { width: 100%; }
+  /* Prevent iOS Safari from auto-zooming the page when a field is
+     tapped — anything under 16px triggers it. */
+  .form-control,
+  select.form-control {
+    font-size: 16px;
+  }
+  /* Row-action buttons (Payslip/History/Edit/Delete) are comfortably
+     tappable even though the table itself scrolls horizontally on
+     narrow screens. */
+  .btn-sm { min-height: 40px; padding: 9px 12px; }
+  /* "Add Employee" is the primary action on a mobile dashboard —
+     give it the full row instead of a small inline button. */
+  .page-head-action .btn { width: 100%; justify-content: center; }
   .salary-grid { grid-template-columns: 1fr; }
   .payslip { padding: 20px; border-radius: 16px; }
   .payslip-head { flex-direction: column; }
@@ -1435,6 +1448,10 @@ tbody tr:last-child td { border-bottom: none; }
   .payslip-meta { grid-template-columns: 1fr; }
   .net-pay { align-items: flex-start; flex-direction: column; }
   .net-value { align-self: flex-end; }
+  /* Long earnings labels (e.g. "Total Worked Days Salary (26 days)")
+     wrap onto their own line instead of squeezing the amount. */
+  .salary-line { flex-wrap: wrap; row-gap: 2px; }
+  .salary-line strong { margin-left: auto; }
   .footer-inner { flex-wrap: wrap; }
   .alert { padding: 11px 38px 11px 12px; font-size: .84rem; }
   .stat-card { min-height: auto; padding: 16px; }
