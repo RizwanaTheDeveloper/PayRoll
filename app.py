@@ -1,3 +1,4 @@
+import re
 from datetime import datetime, date
 from flask import Flask, redirect, render_template, request, url_for, flash, abort, send_file, session
 from io import BytesIO
@@ -20,6 +21,9 @@ app = Flask(__name__)
 app.secret_key = "justarandomsecretkey"
 
 COMPANY_NAME = "5Gen Educon Private Limited"
+
+# Standard Indian PAN format: 5 letters, 4 digits, 1 letter (e.g. ABCDE1234F).
+PAN_PATTERN = re.compile(r"^[A-Z]{5}[0-9]{4}[A-Z]$")
 
 
 # ============================================================
@@ -382,6 +386,15 @@ def _parse_employee_form(form):
     if working_days < 0 or working_days > 31:
         return None, "Working Days must be between 0 and 31."
 
+    if pan and len(pan) != 10:
+        return None, "PAN must be exactly 10 characters."
+
+    if pan and not PAN_PATTERN.match(pan):
+        return None, "PAN must be in the standard format: 5 letters, 4 digits, 1 letter (e.g. ABCDE1234F)."
+
+    if account_number and not account_number.isdigit():
+        return None, "Account Number must contain digits only, no letters or symbols."
+
     if regime_opted not in ("New", "Old"):
         regime_opted = "New"
 
@@ -491,7 +504,7 @@ def _build_payslip_view(employee, month, year):
                 max(tax["net_tax"] - tax_deducted_before, 0) / remaining_including_this, 2
             )
 
-               # TDS for this month can never exceed what's actually left of this
+        # TDS for this month can never exceed what's actually left of this
         # month's earnings after EPF and professional tax — otherwise a
         # short month (few working days present) can push net salary
         # negative. Anything we couldn't collect this month isn't lost:
