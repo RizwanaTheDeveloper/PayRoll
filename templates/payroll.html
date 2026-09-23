@@ -11,13 +11,8 @@
       </span>
       <div>
         <div class="page-eyebrow">{{ company_name }}</div>
-        <h1>Payslip{% if period_label %} · {{ period_label }}{% endif %}</h1>
-        <p class="muted small">
-          Monthly salary statement
-          {% if is_current_period is defined and not is_current_period %}
-            <span class="chip historical-chip"><i class="fa-regular fa-clock" aria-hidden="true"></i> Historical record</span>
-          {% endif %}
-        </p>
+        <h1>Payslip</h1>
+        <p class="muted small">Monthly salary statement</p>
       </div>
     </div>
   </header>
@@ -196,6 +191,8 @@
         Prorated for {{ payroll.working_days }} of {{ payroll.days_in_month }} working days this month
       </div>
       {% endif %}
+      <div class="salary-line"><span>Per Day Salary</span><strong>{{ payroll.per_day_salary | inr }}</strong></div>
+      <div class="salary-line"><span>Total Worked Days Salary ({{ payroll.working_days }} days)</span><strong>{{ payroll.worked_days_salary | inr }}</strong></div>
       <div class="salary-line"><span>Basic Salary</span><strong>{{ payroll.basic | inr }}</strong></div>
       <div class="salary-line"><span>House Rent Allowance</span><strong>{{ payroll.hra | inr }}</strong></div>
       <div class="salary-line"><span>Special Allowance</span><strong>{{ payroll.special_allowance | inr }}</strong></div>
@@ -237,17 +234,12 @@
     Back to Dashboard
   </a>
 
-  <a href="{{ url_for('payslip_history', EmployeeCode=employee.EmployeeCode) }}" class="btn btn-ghost">
-    <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>
-    All Payslips
-  </a>
-
   <button type="button" onclick="window.print()" class="btn btn-primary">
     <i class="fa-solid fa-print" aria-hidden="true"></i>
     Print Payslip
   </button>
 
-  <a href="{{ url_for('download_payslip', EmployeeCode=employee.EmployeeCode, month=month, year=year) }}"
+  <a href="{{ url_for('download_payslip', EmployeeCode=employee.EmployeeCode) }}"
      class="btn btn-primary">
     <i class="fa-solid fa-download" aria-hidden="true"></i>
     Download Payslip

@@ -491,6 +491,18 @@ def _build_payslip_view(employee, month, year):
                 max(tax["net_tax"] - tax_deducted_before, 0) / remaining_including_this, 2
             )
 
+               # TDS for this month can never exceed what's actually left of this
+        # month's earnings after EPF and professional tax — otherwise a
+        # short month (few working days present) can push net salary
+        # negative. Anything we couldn't collect this month isn't lost:
+        # get_fy_summary only counts TDS that was actually recorded via
+        # record_month, so next month's "remaining tax ÷ remaining months"
+        # calculation automatically picks up the shortfall.
+        available_for_tds = max(
+            payroll["gross_earnings"] - payroll["professional_tax"] - payroll["epf"], 0
+        )
+        monthly_tds = round(min(monthly_tds, available_for_tds), 2)
+
         payroll["tds"] = monthly_tds
         payroll["total_deductions"] = payroll["professional_tax"] + payroll["epf"] + monthly_tds
         payroll["net_salary"] = payroll["gross_earnings"] - payroll["total_deductions"]
